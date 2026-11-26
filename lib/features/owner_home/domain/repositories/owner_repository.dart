@@ -15,6 +15,17 @@ abstract class OwnerRepository {
     required String plateNumbers,
     String? specialNotes,
   });
+  Future<VehicleEntity> updateVehicle({
+    required int vehicleId,
+    required String make,
+    required String model,
+    int? year,
+    required String colorName,
+    required String colorHex,
+    required String plateLetters,
+    required String plateNumbers,
+    String? specialNotes,
+  });
   Future<DailyScheduleEntity> upsertDailySchedule({
     required int vehicleId,
     required String pickupTime,

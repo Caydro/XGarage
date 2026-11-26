@@ -91,6 +91,27 @@ class AuthController extends Controller
 
         $user->update($updateData);
 
+        // Optional: Update vehicle details directly if provided for car owners
+        if ($request->hasAny(['make', 'model', 'plate_letters', 'plate_numbers', 'color_name'])) {
+            $vehicleId = $request->input('vehicle_id');
+            $vehicle = $vehicleId
+                ? $user->vehicles()->find($vehicleId)
+                : $user->vehicles()->first();
+
+            if ($vehicle) {
+                $vehicleData = $request->only([
+                    'make', 'model', 'year', 'color_name', 'color_hex',
+                    'plate_letters', 'plate_numbers', 'special_notes',
+                ]);
+                if (isset($vehicleData['plate_letters']) || isset($vehicleData['plate_numbers'])) {
+                    $letters = $vehicleData['plate_letters'] ?? $vehicle->plate_letters;
+                    $numbers = $vehicleData['plate_numbers'] ?? $vehicle->plate_numbers;
+                    $vehicleData['plate_full_normalized'] = \App\Models\Vehicle::normalizePlate($letters, $numbers);
+                }
+                $vehicle->update(array_filter($vehicleData, fn ($val) => ! is_null($val)));
+            }
+        }
+
         return $this->successResponse(
             data: new UserResource($user->fresh()),
             message: 'Profile updated successfully.'

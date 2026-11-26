@@ -153,4 +153,52 @@ class OwnerCubit extends Cubit<OwnerState> {
       rethrow;
     }
   }
+
+  Future<VehicleEntity> updateVehicle({
+    required int vehicleId,
+    required String make,
+    required String model,
+    int? year,
+    required String colorName,
+    required String colorHex,
+    required String plateLetters,
+    required String plateNumbers,
+    String? specialNotes,
+  }) async {
+    try {
+      final updated = await _repository.updateVehicle(
+        vehicleId: vehicleId,
+        make: make,
+        model: model,
+        year: year,
+        colorName: colorName,
+        colorHex: colorHex,
+        plateLetters: plateLetters,
+        plateNumbers: plateNumbers,
+        specialNotes: specialNotes,
+      );
+
+      if (!isClosed && state is OwnerLoaded) {
+        final current = state as OwnerLoaded;
+        final updatedList = current.vehicles
+            .map((v) => v.id == vehicleId ? updated : v)
+            .toList();
+        final primary = current.primaryVehicle?.id == vehicleId
+            ? updated
+            : current.primaryVehicle;
+        emit(current.copyWith(
+          primaryVehicle: primary,
+          vehicles: updatedList,
+        ));
+      }
+
+      return updated;
+    } catch (e) {
+      if (isClosed) rethrow;
+      if (state is! OwnerLoaded) {
+        emit(OwnerError(e.toString()));
+      }
+      rethrow;
+    }
+  }
 }

@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -15,6 +16,9 @@ import '../../../../core/widgets/app_logo.dart';
 import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
+import '../../../owner_home/domain/entities/vehicle_entity.dart';
+import '../../../owner_home/presentation/cubit/owner_cubit.dart';
+import '../../../owner_home/presentation/cubit/owner_state.dart';
 import '../locale_cubit.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -164,12 +168,18 @@ class _SettingsPageState extends State<SettingsPage> {
     if (source == null) return;
 
     try {
-      final XFile? file = await picker.pickImage(
-        source: source,
-        maxWidth: 1024,
-        maxHeight: 1024,
-        imageQuality: 85,
-      );
+      XFile? file;
+      try {
+        file = await picker.pickImage(
+          source: source,
+          maxWidth: 1024,
+          maxHeight: 1024,
+          imageQuality: 85,
+        );
+      } on PlatformException {
+        // Fallback without scaling if platform scaling throws
+        file = await picker.pickImage(source: source);
+      }
 
       if (file == null) return;
 
@@ -187,6 +197,25 @@ class _SettingsPageState extends State<SettingsPage> {
                 : "Profile photo updated successfully",
           ),
           backgroundColor: AppColors.statusReady,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } on PlatformException catch (e) {
+      if (!mounted) return;
+      final isCamDenied = e.code == 'camera_access_denied' ||
+          (e.message != null && e.message!.toLowerCase().contains('permission'));
+      final msg = isCamDenied
+          ? (isArabic
+              ? "يرجى منح إذن الوصول للكاميرا من إعدادات الهاتف، أو الاختيار من المعرض."
+              : "Camera access denied. Please grant permission in device settings or pick from gallery.")
+          : (isArabic
+              ? "تعذر فتح الكاميرا أو المعرض (${e.message ?? e.code})"
+              : "Could not open camera or gallery (${e.message ?? e.code})");
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(msg),
+          backgroundColor: AppColors.statusDanger,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -382,8 +411,12 @@ class _SettingsPageState extends State<SettingsPage> {
                       const SizedBox(height: 12),
                       AppButton(
                         text: isArabic
-                            ? "تعديل بيانات الحساب ورقم الهاتف"
-                            : "Edit Profile & Phone Number",
+                            ? (user.isOwner
+                                ? "تعديل بيانات الحساب وتفاصيل السيارة"
+                                : "تعديل بيانات الحساب ورقم الهاتف")
+                            : (user.isOwner
+                                ? "Edit Profile & Vehicle Details"
+                                : "Edit Profile & Phone Number"),
                         icon: Icons.edit_outlined,
                         variant: AppButtonVariant.glass,
                         height: 42,
@@ -620,22 +653,36 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _openEditProfileSheet(
       BuildContext context, UserEntity user, bool isArabic) {
+    VehicleEntity? vehicle;
+    try {
+      final ownerState = context.read<OwnerCubit>().state;
+      if (ownerState is OwnerLoaded) {
+        vehicle = ownerState.primaryVehicle ??
+            (ownerState.vehicles.isNotEmpty ? ownerState.vehicles.first : null);
+      }
+    } catch (_) {}
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (sheetContext) =>
-          _EditProfileBottomSheet(user: user, isArabic: isArabic),
+      builder: (sheetContext) => _EditProfileBottomSheet(
+        user: user,
+        vehicle: vehicle,
+        isArabic: isArabic,
+      ),
     );
   }
 }
 
 class _EditProfileBottomSheet extends StatefulWidget {
   final UserEntity user;
+  final VehicleEntity? vehicle;
   final bool isArabic;
 
   const _EditProfileBottomSheet({
     required this.user,
+    this.vehicle,
     required this.isArabic,
   });
 
@@ -650,6 +697,26 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
   late final TextEditingController _emailController;
   late final TextEditingController _passwordController;
 
+  // Car Details Controllers (if user is an owner)
+  late final TextEditingController _makeController;
+  late final TextEditingController _modelController;
+  late final TextEditingController _yearController;
+  late final TextEditingController _colorNameController;
+  late final TextEditingController _plateLettersController;
+  late final TextEditingController _plateNumbersController;
+  late final TextEditingController _specialNotesController;
+  late String _selectedColorHex;
+
+  final List<Map<String, String>> _presetColors = [
+    {'nameAr': 'أسود', 'nameEn': 'Black', 'hex': '#1E1B26'},
+    {'nameAr': 'أبيض', 'nameEn': 'White', 'hex': '#F8FAFC'},
+    {'nameAr': 'فضي', 'nameEn': 'Silver', 'hex': '#94A3B8'},
+    {'nameAr': 'رمادي', 'nameEn': 'Grey', 'hex': '#475569'},
+    {'nameAr': 'قرمزي', 'nameEn': 'Crimson', 'hex': '#D9385A'},
+    {'nameAr': 'أزرق', 'nameEn': 'Blue', 'hex': '#2563EB'},
+    {'nameAr': 'كحلي', 'nameEn': 'Navy', 'hex': '#0F172A'},
+  ];
+
   bool _obscurePassword = true;
   bool _isSaving = false;
   String? _errorMessage;
@@ -661,6 +728,16 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
     _phoneController = TextEditingController(text: widget.user.phone);
     _emailController = TextEditingController(text: widget.user.email ?? '');
     _passwordController = TextEditingController();
+
+    final v = widget.vehicle;
+    _makeController = TextEditingController(text: v?.make ?? '');
+    _modelController = TextEditingController(text: v?.model ?? '');
+    _yearController = TextEditingController(text: v?.year?.toString() ?? '');
+    _colorNameController = TextEditingController(text: v?.colorName ?? '');
+    _plateLettersController = TextEditingController(text: v?.plateLetters ?? '');
+    _plateNumbersController = TextEditingController(text: v?.plateNumbers ?? '');
+    _specialNotesController = TextEditingController(text: v?.specialNotes ?? '');
+    _selectedColorHex = (v?.colorHex.isNotEmpty == true) ? v!.colorHex : '#1E1B26';
   }
 
   @override
@@ -669,6 +746,13 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
     _phoneController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _makeController.dispose();
+    _modelController.dispose();
+    _yearController.dispose();
+    _colorNameController.dispose();
+    _plateLettersController.dispose();
+    _plateNumbersController.dispose();
+    _specialNotesController.dispose();
     super.dispose();
   }
 
@@ -696,18 +780,68 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
       return;
     }
 
+    final hasVehicle = widget.vehicle != null;
+    final make = _makeController.text.trim();
+    final model = _modelController.text.trim();
+    final plateLetters = _plateLettersController.text.trim();
+    final plateNumbers = _plateNumbersController.text.trim();
+
+    if (hasVehicle) {
+      if (make.isEmpty || model.isEmpty) {
+        setState(() {
+          _errorMessage = widget.isArabic
+              ? "يرجى إدخال ماركة وموديل السيارة"
+              : "Vehicle make and model are required";
+        });
+        return;
+      }
+      if (plateLetters.isEmpty || plateNumbers.isEmpty) {
+        setState(() {
+          _errorMessage = widget.isArabic
+              ? "يرجى إدخال حروف وأرقام اللوحة"
+              : "License plate letters and numbers are required";
+        });
+        return;
+      }
+    }
+
     setState(() {
       _isSaving = true;
       _errorMessage = null;
     });
 
     try {
+      // 1. Update Profile (Name, Phone, Email, Password)
       await context.read<AuthCubit>().updateProfile(
             name: name,
             phone: phone,
             email: email.isEmpty ? null : email,
             password: password.isEmpty ? null : password,
           );
+
+      if (!mounted) return;
+
+      // 2. Update Vehicle Details if owner
+      if (hasVehicle && widget.vehicle != null) {
+        final yearInt = int.tryParse(_yearController.text.trim());
+        final colorName = _colorNameController.text.trim().isEmpty
+            ? (widget.isArabic ? "مخصص" : "Custom")
+            : _colorNameController.text.trim();
+
+        await context.read<OwnerCubit>().updateVehicle(
+              vehicleId: widget.vehicle!.id,
+              make: make,
+              model: model,
+              year: yearInt,
+              colorName: colorName,
+              colorHex: _selectedColorHex,
+              plateLetters: plateLetters,
+              plateNumbers: plateNumbers,
+              specialNotes: _specialNotesController.text.trim().isEmpty
+                  ? null
+                  : _specialNotesController.text.trim(),
+            );
+      }
 
       if (mounted) {
         Navigator.pop(context);
@@ -718,11 +852,17 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
                 const Icon(Icons.check_circle_rounded,
                     color: Colors.white, size: 20),
                 const SizedBox(width: 10),
-                Text(
-                  widget.isArabic
-                      ? "تم تحديث بياناتك بنجاح!"
-                      : "Profile updated successfully!",
-                  style: const TextStyle(fontWeight: FontWeight.w700),
+                Expanded(
+                  child: Text(
+                    hasVehicle
+                        ? (widget.isArabic
+                            ? "تم تحديث البيانات وتفاصيل السيارة بنجاح!"
+                            : "Profile and vehicle details updated successfully!")
+                        : (widget.isArabic
+                            ? "تم تحديث بياناتك بنجاح!"
+                            : "Profile updated successfully!"),
+                    style: const TextStyle(fontWeight: FontWeight.w700),
+                  ),
                 ),
               ],
             ),
@@ -746,9 +886,12 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final isAr = widget.isArabic;
+    final hasVehicle = widget.vehicle != null;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final maxSheetHeight = MediaQuery.of(context).size.height * 0.88;
 
     return Container(
+      constraints: BoxConstraints(maxHeight: maxSheetHeight),
       padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
       decoration: const BoxDecoration(
         color: AppColors.bgElevated,
@@ -784,8 +927,8 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
                     const SizedBox(width: 10),
                     Text(
                       isAr
-                          ? "تعديل البيانات الشخصية"
-                          : "Edit Profile Information",
+                          ? (hasVehicle ? "تعديل البيانات وتفاصيل السيارة" : "تعديل البيانات الشخصية")
+                          : (hasVehicle ? "Edit Profile & Vehicle" : "Edit Profile Information"),
                       style: AppTypography.getHeading3(isArabic: isAr),
                     ),
                   ],
@@ -826,6 +969,17 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
               ),
               const SizedBox(height: 14),
             ],
+
+            // Section 1 Header: Personal Info
+            Text(
+              isAr ? "بيانات الحساب الأساسية" : "Account Information",
+              style: const TextStyle(
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+                color: AppColors.accentRoseText,
+              ),
+            ),
+            const SizedBox(height: 10),
 
             // Full Name Field
             Text(
@@ -905,7 +1059,283 @@ class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
                 hintText: isAr ? "••••••••" : "••••••••",
               ),
             ),
-            const SizedBox(height: 22),
+
+            // Section 2: Vehicle Details (Only for car owners)
+            if (hasVehicle) ...[
+              const SizedBox(height: 22),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceInput,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.primaryCrimson.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: const BoxDecoration(
+                        color: AppColors.accentRoseSoft,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.directions_car_filled_rounded,
+                        color: AppColors.accentRoseText,
+                        size: 18,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isAr ? "بيانات وتفاصيل السيارة" : "Vehicle Details",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13.5,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            isAr
+                                ? "تعديل الماركة، الموديل، الأرقام واللون"
+                                : "Edit make, model, license plate and color",
+                            style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+
+              // Make & Model Row
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isAr ? "الماركة" : "Make / Brand",
+                          style: AppTypography.getCaption(isArabic: isAr),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _makeController,
+                          decoration: InputDecoration(
+                            hintText: "Mercedes-Benz",
+                            prefixIcon: const Icon(Icons.directions_car_outlined,
+                                size: 20, color: AppColors.textMuted),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isAr ? "الموديل والفئة" : "Model",
+                          style: AppTypography.getCaption(isArabic: isAr),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _modelController,
+                          decoration: InputDecoration(
+                            hintText: "C200 AMG",
+                            prefixIcon: const Icon(Icons.speed_rounded,
+                                size: 20, color: AppColors.textMuted),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Year & Color Name Row
+              Row(
+                children: [
+                  SizedBox(
+                    width: 110,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isAr ? "سنة الصنع" : "Year",
+                          style: AppTypography.getCaption(isArabic: isAr),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _yearController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            hintText: "2023",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isAr ? "اسم اللون" : "Color Name",
+                          style: AppTypography.getCaption(isArabic: isAr),
+                        ),
+                        const SizedBox(height: 6),
+                        TextField(
+                          controller: _colorNameController,
+                          decoration: InputDecoration(
+                            hintText: isAr ? "أسود ميتاليك" : "Obsidian Black",
+                            prefixIcon: Container(
+                              width: 12,
+                              height: 12,
+                              margin: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Color(int.parse(_selectedColorHex.replaceAll('#', '0xFF'))),
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white60, width: 1.5),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Preset Color Swatches
+              Text(
+                isAr ? "اختر درجة لون السيارة" : "Choose Vehicle Color",
+                style: AppTypography.getCaption(isArabic: isAr),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _presetColors.map((c) {
+                  final isSelected =
+                      _selectedColorHex.toUpperCase() == c['hex']!.toUpperCase();
+                  final col = Color(int.parse(c['hex']!.replaceAll('#', '0xFF')));
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _selectedColorHex = c['hex']!;
+                        if (_colorNameController.text.trim().isEmpty ||
+                            _presetColors.any((p) =>
+                                p['nameAr'] == _colorNameController.text ||
+                                p['nameEn'] == _colorNameController.text)) {
+                          _colorNameController.text =
+                              isAr ? c['nameAr']! : c['nameEn']!;
+                        }
+                      });
+                    },
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: col,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: isSelected
+                              ? AppColors.primaryCrimson
+                              : Colors.white24,
+                          width: isSelected ? 2.5 : 1.2,
+                        ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.primaryCrimson
+                                      .withValues(alpha: 0.4),
+                                  blurRadius: 8,
+                                  spreadRadius: 1,
+                                )
+                              ]
+                            : null,
+                      ),
+                      child: isSelected
+                          ? Icon(
+                              Icons.check_rounded,
+                              size: 18,
+                              color: col.computeLuminance() > 0.5
+                                  ? Colors.black
+                                  : Colors.white,
+                            )
+                          : null,
+                    ),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 14),
+
+              // License Plate (Letters and Numbers)
+              Text(
+                isAr ? "لوحة السيارة (الأرقام والحروف)" : "License Plate",
+                style: AppTypography.getCaption(isArabic: isAr),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: TextField(
+                      controller: _plateLettersController,
+                      decoration: InputDecoration(
+                        hintText: isAr ? "أ ب ج" : "A B C",
+                        prefixIcon: const Icon(Icons.badge_outlined,
+                            size: 20, color: AppColors.textMuted),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 2,
+                    child: TextField(
+                      controller: _plateNumbersController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: "1234",
+                        prefixIcon: const Icon(Icons.pin_outlined,
+                            size: 20, color: AppColors.textMuted),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+
+              // Special Notes
+              Text(
+                isAr ? "ملاحظات إضافية عن السيارة (اختياري)" : "Special Notes (Optional)",
+                style: AppTypography.getCaption(isArabic: isAr),
+              ),
+              const SizedBox(height: 6),
+              TextField(
+                controller: _specialNotesController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  hintText: isAr
+                      ? "مثل: برجاء الحرص عند ركن السيارة..."
+                      : "e.g. Please be careful with front spoiler...",
+                ),
+              ),
+            ],
+
+            const SizedBox(height: 24),
 
             // Save Changes CTA Button with 3 Jumping Dots
             AppButton(

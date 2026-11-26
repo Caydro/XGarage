@@ -8,6 +8,7 @@ abstract class OwnerRemoteDataSource {
   Future<Map<String, dynamic>> getDashboard();
   Future<List<VehicleModel>> getVehicles();
   Future<VehicleModel> addVehicle(Map<String, dynamic> data);
+  Future<VehicleModel> updateVehicle(int vehicleId, Map<String, dynamic> data);
   Future<DailyScheduleModel> upsertDailySchedule(int vehicleId, Map<String, dynamic> data);
   Future<PickupRequestModel> createPickupRequest(int vehicleId, Map<String, dynamic> data);
   Future<PickupRequestModel> cancelPickupRequest(int requestId);
@@ -34,6 +35,12 @@ class OwnerRemoteDataSourceImpl implements OwnerRemoteDataSource {
   @override
   Future<VehicleModel> addVehicle(Map<String, dynamic> data) async {
     final response = await _apiClient.post(ApiEndpoints.ownerVehicles, data: data);
+    return VehicleModel.fromJson(response['data'] as Map<String, dynamic>);
+  }
+
+  @override
+  Future<VehicleModel> updateVehicle(int vehicleId, Map<String, dynamic> data) async {
+    final response = await _apiClient.put(ApiEndpoints.ownerVehicle(vehicleId), data: data);
     return VehicleModel.fromJson(response['data'] as Map<String, dynamic>);
   }
 

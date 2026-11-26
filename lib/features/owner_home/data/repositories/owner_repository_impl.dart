@@ -79,6 +79,36 @@ class OwnerRepositoryImpl implements OwnerRepository {
   }
 
   @override
+  Future<VehicleEntity> updateVehicle({
+    required int vehicleId,
+    required String make,
+    required String model,
+    int? year,
+    required String colorName,
+    required String colorHex,
+    required String plateLetters,
+    required String plateNumbers,
+    String? specialNotes,
+  }) async {
+    try {
+      return await _remoteDataSource.updateVehicle(vehicleId, {
+        'make': make,
+        'model': model,
+        if (year != null) 'year': year,
+        'color_name': colorName,
+        'color_hex': colorHex,
+        'plate_letters': plateLetters,
+        'plate_numbers': plateNumbers,
+        if (specialNotes != null) 'special_notes': specialNotes,
+      });
+    } on ServerException catch (e) {
+      throw ServerFailure(e.message, e.statusCode);
+    } catch (e) {
+      throw ServerFailure(e.toString());
+    }
+  }
+
+  @override
   Future<DailyScheduleEntity> upsertDailySchedule({
     required int vehicleId,
     required String pickupTime,
