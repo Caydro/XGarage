@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'app_colors.dart';
 import 'app_typography.dart';
 
 class AppTheme {
-  static ThemeData get darkTheme {
+  static ThemeData getTheme({bool isArabic = false}) {
+    final baseTextTheme = ThemeData.dark().textTheme;
+    final themedTextTheme = isArabic
+        ? GoogleFonts.tajawalTextTheme(baseTextTheme)
+        : GoogleFonts.outfitTextTheme(baseTextTheme);
+
     return ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
@@ -15,6 +21,7 @@ class AppTheme {
         surface: AppColors.bgElevated,
         error: AppColors.statusDanger,
       ),
+      textTheme: themedTextTheme,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -24,9 +31,12 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceInput,
-        hintStyle: AppTypography.getBodyMedium().copyWith(color: AppColors.textMuted),
-        labelStyle: AppTypography.getBodyMedium().copyWith(color: AppColors.textSecondary),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        hintStyle: AppTypography.getBodyMedium(isArabic: isArabic)
+            .copyWith(color: AppColors.textMuted),
+        labelStyle: AppTypography.getBodyMedium(isArabic: isArabic)
+            .copyWith(color: AppColors.textSecondary),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
@@ -37,7 +47,8 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primaryCrimson, width: 1.5),
+          borderSide:
+              const BorderSide(color: AppColors.primaryCrimson, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -46,4 +57,6 @@ class AppTheme {
       ),
     );
   }
+
+  static ThemeData get darkTheme => getTheme();
 }

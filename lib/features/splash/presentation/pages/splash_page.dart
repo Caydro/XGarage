@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_logo.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
@@ -81,23 +80,24 @@ class _SplashPageState extends State<SplashPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A090D),
+      backgroundColor: const Color(0xFF07060A),
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          // Ambient Radial Crimson Glow in background
+          // Ambient Radial Crimson Core Glow
           Positioned(
-            top: 60,
+            top: MediaQuery.of(context).size.height * 0.12,
             left: 0,
             right: 0,
-            height: 320,
+            height: 420,
             child: Container(
               decoration: const BoxDecoration(
                 gradient: RadialGradient(
-                  center: Alignment(0, -0.2),
+                  center: Alignment(0, -0.1),
                   radius: 0.8,
                   colors: [
-                    Color(0x38E11D48),
-                    Color(0x10E11D48),
+                    Color(0x40E11D48),
+                    Color(0x14E11D48),
                     Colors.transparent,
                   ],
                 ),
@@ -114,76 +114,45 @@ class _SplashPageState extends State<SplashPage>
                   children: [
                     const Spacer(flex: 2),
 
-                    // Top: Glowing Concentric Tachometer Brand Emblem
-                    const GlowingParkingEmblem(size: 124),
-                    const SizedBox(height: 20),
-
-                    // Branded Wordmark with Glowing Crimson X
-                    const AppLogo.wordmark(
-                      size: 26,
-                      showSubtitle: true,
-                      isItalic: true,
-                    ),
-
-                    const Spacer(flex: 2),
-
-                    // Center: Dark McLaren Supercar with Crimson Neon Contours
+                    // Central High-Performance Tachometer Artwork
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Stack(
-                        alignment: Alignment.bottomCenter,
-                        children: [
-                          // Soft ground red reflection
-                          Container(
-                            height: 34,
-                            width: 260,
-                            decoration: BoxDecoration(
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0x44E11D48),
-                                  blurRadius: 36,
-                                  spreadRadius: 8,
-                                ),
-                              ],
+                      padding: const EdgeInsets.symmetric(horizontal: 24),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(
+                            maxHeight: 460,
+                            maxWidth: 380,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(28),
+                            child: Image.asset(
+                              'assets/images/splash_bg.jpg',
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: const [
+                                    GlowingParkingEmblem(size: 130),
+                                    SizedBox(height: 24),
+                                    AppLogo.wordmark(
+                                      size: 28,
+                                      showSubtitle: true,
+                                      isItalic: true,
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                           ),
-                          Image.asset(
-                            'assets/images/splash_car.png',
-                            height: 190,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) {
-                              // Elegant fallback if asset file is not ready
-                              return Container(
-                                height: 160,
-                                margin:
-                                    const EdgeInsets.symmetric(horizontal: 24),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceCard,
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                    color: AppColors.primaryCrimson
-                                        .withValues(alpha: 0.3),
-                                  ),
-                                ),
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.directions_car_filled_rounded,
-                                    size: 72,
-                                    color: AppColors.primaryCrimson,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        ],
+                        ),
                       ),
                     ),
 
                     const Spacer(flex: 3),
 
                     // Bottom: Neon Crimson Glowing Rotating Spinner
-                    const GlowingCrimsonSpinner(size: 48),
-                    const SizedBox(height: 20),
+                    const GlowingCrimsonSpinner(size: 46),
+                    const SizedBox(height: 28),
 
                     const Spacer(flex: 1),
                   ],

@@ -195,29 +195,41 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            const AppLogo.emblem(size: 42, showGlow: true),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const AppLogo.wordmark(size: 15, showSubtitle: false, isItalic: true),
-                const SizedBox(height: 2),
-                Text(
-                  isArabic ? "مرحباً بك في جراجك" : "Welcome Back",
-                  style: AppTypography.getHeading3(isArabic: isArabic),
+        Expanded(
+          child: Row(
+            children: [
+              const AppLogo.emblem(size: 38, showGlow: true),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const AppLogo.wordmark(
+                        size: 14, showSubtitle: false, isItalic: true),
+                    const SizedBox(height: 2),
+                    Text(
+                      isArabic ? "مرحباً بك في جراجك" : "Welcome Back",
+                      style: AppTypography.getHeading3(isArabic: isArabic),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             // Language Switcher Pill
-            IconButton(
-              icon: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            GestureDetector(
+              onTap: () => context.read<LocaleCubit>().toggleLocale(),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceInput,
                   borderRadius: BorderRadius.circular(10),
@@ -225,19 +237,27 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
                 ),
                 child: Text(
                   isArabic ? 'EN' : 'العربية',
-                  style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.w700, fontSize: 11),
                 ),
               ),
-              onPressed: () => context.read<LocaleCubit>().toggleLocale(),
             ),
+            const SizedBox(width: 4),
             // Notifications Center
             IconButton(
-              icon: const Icon(Icons.notifications_none_rounded, color: AppColors.textSecondary),
-              onPressed: () => NotificationsSheet.show(context, isArabic: isArabic),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              icon: const Icon(Icons.notifications_none_rounded,
+                  color: AppColors.textSecondary, size: 22),
+              onPressed: () =>
+                  NotificationsSheet.show(context, isArabic: isArabic),
             ),
             // Settings / Logout
             IconButton(
-              icon: const Icon(Icons.settings_outlined, color: AppColors.textSecondary),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              icon: const Icon(Icons.settings_outlined,
+                  color: AppColors.textSecondary, size: 22),
               onPressed: () => context.push('/settings'),
             ),
           ],

@@ -176,50 +176,64 @@ class _EmployeeQueuePageState extends State<EmployeeQueuePage> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Row(
-          children: [
-            const AppLogo.emblem(size: 42, showGlow: true),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+        Expanded(
+          child: Row(
+            children: [
+              const AppLogo.emblem(size: 38, showGlow: true),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                        color: AppColors.statusReady,
-                        shape: BoxShape.circle,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: AppColors.statusReady,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'VALET OPERATIONS',
+                            style: const TextStyle(
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.2,
+                              color: AppColors.statusReady,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(height: 2),
                     Text(
-                      'VALET OPERATIONS',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 1.5,
-                        color: AppColors.statusReady,
-                      ),
+                      isArabic ? "جدول خروج اليوم" : "Today's Departure Queue",
+                      style: AppTypography.getHeading3(isArabic: isArabic),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  isArabic ? "جدول خروج اليوم" : "Today's Departure Queue",
-                  style: AppTypography.getHeading3(isArabic: isArabic),
-                ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
+        const SizedBox(width: 8),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            IconButton(
-              icon: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            GestureDetector(
+              onTap: () => context.read<LocaleCubit>().toggleLocale(),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceInput,
                   borderRadius: BorderRadius.circular(10),
@@ -228,20 +242,32 @@ class _EmployeeQueuePageState extends State<EmployeeQueuePage> {
                 child: Text(
                   isArabic ? 'EN' : 'العربية',
                   style: const TextStyle(
-                      fontWeight: FontWeight.w700, fontSize: 12),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
                 ),
               ),
-              onPressed: () => context.read<LocaleCubit>().toggleLocale(),
             ),
+            const SizedBox(width: 4),
             IconButton(
-              icon: const Icon(Icons.notifications_none_rounded,
-                  color: AppColors.textSecondary),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              icon: const Icon(
+                Icons.notifications_none_rounded,
+                color: AppColors.textSecondary,
+                size: 22,
+              ),
               onPressed: () =>
                   NotificationsSheet.show(context, isArabic: isArabic),
             ),
             IconButton(
-              icon: const Icon(Icons.settings_outlined,
-                  color: AppColors.textSecondary),
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+              icon: const Icon(
+                Icons.settings_outlined,
+                color: AppColors.textSecondary,
+                size: 22,
+              ),
               onPressed: () => context.push('/settings'),
             ),
           ],

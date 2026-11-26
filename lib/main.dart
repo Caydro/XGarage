@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:go_router/go_router.dart';
-
 import 'bootstrap.dart';
 import 'core/di/injection.dart';
 import 'core/router/app_router.dart';
@@ -55,7 +54,7 @@ class _XGarageAppState extends State<XGarageApp> {
           return MaterialApp.router(
             title: 'XGarage',
             debugShowCheckedModeBanner: false,
-            theme: AppTheme.darkTheme,
+            theme: AppTheme.getTheme(isArabic: locale.languageCode == 'ar'),
             locale: locale,
             supportedLocales: const [
               Locale('ar'),
