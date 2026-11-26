@@ -97,6 +97,14 @@ class AuthCubit extends Cubit<AuthState> {
     return updatedUser;
   }
 
+  Future<UserEntity> updateAvatar(String filePath) async {
+    final updatedUser = await _authRepository.updateAvatar(filePath);
+    if (!isClosed) {
+      emit(Authenticated(updatedUser));
+    }
+    return updatedUser;
+  }
+
   void _syncFcmToken() {
     try {
       if (sl.isRegistered<NotificationService>() &&

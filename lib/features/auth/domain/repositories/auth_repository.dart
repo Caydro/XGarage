@@ -22,5 +22,6 @@ abstract class AuthRepository {
     String? email,
     String? password,
   });
+  Future<UserEntity> updateAvatar(String filePath);
   Future<void> logout();
 }

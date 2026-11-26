@@ -10,7 +10,8 @@ class VehicleHeroCard extends StatefulWidget {
   final VehicleEntity vehicle;
   final String? ownerName;
   final bool isArabic;
-  final Function(bool wantsWash, String washType, DateTime? scheduledFor, String? notes) onTakeCarOut;
+  final Function(bool wantsWash, String washType, DateTime? scheduledFor,
+      String? notes) onTakeCarOut;
   final Function(int requestId) onCancelRequest;
 
   const VehicleHeroCard({
@@ -151,42 +152,19 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
                           style: AppTypography.getCaption(
                               isArabic: widget.isArabic),
                         ),
-                        if (v.ownerName != null ||
-                            widget.ownerName != null) ...[
-                          const SizedBox(height: 4),
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.person_outline_rounded,
-                                size: 13,
-                                color: AppColors.accentRoseText,
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                child: Text(
-                                  '${widget.isArabic ? "مالك السيارة: " : "Owner: "}${v.ownerName ?? widget.ownerName}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: AppColors.accentRoseText,
-                                  ),
-                                  maxLines: 2,
-                                  softWrap: true,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
                       ],
                     ),
                   ),
                   if (v.parkingSpot != null)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: AppColors.accentRoseSoft,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.primaryCrimson.withValues(alpha: 0.4)),
+                        border: Border.all(
+                            color: AppColors.primaryCrimson
+                                .withValues(alpha: 0.4)),
                       ),
                       child: Text(
                         '${widget.isArabic ? "موقف" : "Spot"} ${v.parkingSpot}',
@@ -199,7 +177,61 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
                     ),
                 ],
               ),
-              const SizedBox(height: 18),
+              if (v.ownerName != null || widget.ownerName != null) ...[
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceInput.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: AppColors.primaryCrimson.withValues(alpha: 0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: AppColors.accentRoseSoft,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.person_rounded,
+                          size: 14,
+                          color: AppColors.accentRoseText,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        widget.isArabic ? "مالك السيارة:" : "Owner:",
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          v.ownerName ?? widget.ownerName!,
+                          style: const TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
 
               // Center: Authentic Egyptian / GCC License Plate Display
               Center(
@@ -236,7 +268,11 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
     final steps = [
       {'key': 'parked', 'labelAr': 'في الموقف', 'labelEn': 'Parked'},
       {'key': 'washing', 'labelAr': 'في الغسيل', 'labelEn': 'Washing'},
-      {'key': 'ready_at_gate', 'labelAr': 'جاهزة عند البوابة', 'labelEn': 'Ready at Gate'},
+      {
+        'key': 'ready_at_gate',
+        'labelAr': 'جاهزة عند البوابة',
+        'labelEn': 'Ready at Gate'
+      },
     ];
 
     int activeIdx = 0;
@@ -254,11 +290,13 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
         children: List.generate(steps.length, (idx) {
           final isPassed = idx <= activeIdx;
           final isCurrent = idx == activeIdx;
-          final label = widget.isArabic ? steps[idx]['labelAr']! : steps[idx]['labelEn']!;
+          final label =
+              widget.isArabic ? steps[idx]['labelAr']! : steps[idx]['labelEn']!;
 
           Color dotColor = const Color(0xFF4B465C);
           if (isCurrent) {
-            dotColor = idx == 2 ? AppColors.statusReady : AppColors.primaryCrimson;
+            dotColor =
+                idx == 2 ? AppColors.statusReady : AppColors.primaryCrimson;
           } else if (isPassed) {
             dotColor = AppColors.primaryCrimson.withValues(alpha: 0.7);
           }
@@ -300,7 +338,9 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
                   width: 24,
                   height: 1.5,
                   margin: const EdgeInsets.symmetric(horizontal: 4),
-                  color: idx < activeIdx ? AppColors.primaryCrimson : const Color(0xFF33303D),
+                  color: idx < activeIdx
+                      ? AppColors.primaryCrimson
+                      : const Color(0xFF33303D),
                 ),
             ],
           );
@@ -318,7 +358,9 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
         color: isReady ? AppColors.statusReadyBg : AppColors.surfaceInput,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isReady ? AppColors.statusReady : AppColors.primaryCrimson.withValues(alpha: 0.5),
+          color: isReady
+              ? AppColors.statusReady
+              : AppColors.primaryCrimson.withValues(alpha: 0.5),
         ),
       ),
       child: Column(
@@ -327,7 +369,8 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
             children: [
               Icon(
                 isReady ? Icons.check_circle_rounded : Icons.schedule_rounded,
-                color: isReady ? AppColors.statusReady : AppColors.statusScheduled,
+                color:
+                    isReady ? AppColors.statusReady : AppColors.statusScheduled,
                 size: 24,
               ),
               const SizedBox(width: 10),
@@ -337,8 +380,12 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
                   children: [
                     Text(
                       isReady
-                          ? (widget.isArabic ? "سيارتك جاهزة عند البوابة الآن!" : "Your car is ready at the gate!")
-                          : (widget.isArabic ? "طلب الخروج قيد التنفيذ" : "Exit request in progress"),
+                          ? (widget.isArabic
+                              ? "سيارتك جاهزة عند البوابة الآن!"
+                              : "Your car is ready at the gate!")
+                          : (widget.isArabic
+                              ? "طلب الخروج قيد التنفيذ"
+                              : "Exit request in progress"),
                       style: TextStyle(
                         color: isReady ? AppColors.statusReady : Colors.white,
                         fontWeight: FontWeight.w700,
@@ -350,7 +397,8 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
                         widget.isArabic
                             ? 'غسيل: ${activeReq.washStatus == "completed" ? "تم الانتهاء" : "قيد الغسيل"}'
                             : 'Wash: ${activeReq.washStatus}',
-                        style: const TextStyle(color: AppColors.statusWashing, fontSize: 12),
+                        style: const TextStyle(
+                            color: AppColors.statusWashing, fontSize: 12),
                       ),
                   ],
                 ),
@@ -511,7 +559,9 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
                             color: AppColors.statusScheduled, size: 16),
                         const SizedBox(width: 6),
                         Text(
-                          isAr ? "الموعد المطلوب لتجهيز سيارتك:" : "Desired Ready Time:",
+                          isAr
+                              ? "الموعد المطلوب لتجهيز سيارتك:"
+                              : "Desired Ready Time:",
                           style: AppTypography.getCaption(isArabic: isAr),
                         ),
                       ],
@@ -522,10 +572,12 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryCrimson.withValues(alpha: 0.2),
+                          color:
+                              AppColors.primaryCrimson.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                              color: AppColors.primaryCrimson.withValues(alpha: 0.6)),
+                              color: AppColors.primaryCrimson
+                                  .withValues(alpha: 0.6)),
                         ),
                         child: Text(
                           _formatTimeOfDay(_selectedDepartureTime, isAr),
@@ -731,7 +783,9 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              color: isSelected ? AppColors.accentRoseText : AppColors.textSecondary,
+              color: isSelected
+                  ? AppColors.accentRoseText
+                  : AppColors.textSecondary,
             ),
           ),
         ),

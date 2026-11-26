@@ -97,6 +97,27 @@ class AuthController extends Controller
         );
     }
 
+    public function updateAvatar(Request $request): JsonResponse
+    {
+        $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
+        ]);
+
+        $user = $request->user();
+
+        if ($user->avatar && \Illuminate\Support\Facades\Storage::disk('public')->exists($user->avatar)) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($user->avatar);
+        }
+
+        $path = $request->file('avatar')->store('avatars', 'public');
+        $user->update(['avatar' => $path]);
+
+        return $this->successResponse(
+            data: new UserResource($user->fresh()),
+            message: 'Profile photo updated successfully.'
+        );
+    }
+
     public function updateFcmToken(Request $request): JsonResponse
     {
         $validated = $request->validate([

@@ -8,6 +8,7 @@ class UserModel extends UserEntity {
     super.email,
     required super.role,
     super.locale = 'ar',
+    super.avatarUrl,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -18,6 +19,7 @@ class UserModel extends UserEntity {
       email: json['email'] as String?,
       role: json['role'] as String? ?? 'owner',
       locale: json['locale'] as String? ?? 'ar',
+      avatarUrl: json['avatar_url'] as String? ?? json['avatar'] as String?,
     );
   }
 
@@ -29,6 +31,7 @@ class UserModel extends UserEntity {
       'email': email,
       'role': role,
       'locale': locale,
+      'avatar_url': avatarUrl,
     };
   }
 }

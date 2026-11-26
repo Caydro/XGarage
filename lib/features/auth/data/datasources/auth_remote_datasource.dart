@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../models/user_model.dart';
@@ -7,6 +8,7 @@ abstract class AuthRemoteDataSource {
   Future<(UserModel, String)> register(Map<String, dynamic> payload);
   Future<UserModel> getMe();
   Future<UserModel> updateProfile(Map<String, dynamic> payload);
+  Future<UserModel> updateAvatar(String filePath);
   Future<void> logout();
 }
 
@@ -47,6 +49,17 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel> updateProfile(Map<String, dynamic> payload) async {
     final response = await _apiClient.put(ApiEndpoints.updateProfile, data: payload);
+    final data = response['data'] as Map<String, dynamic>;
+    return UserModel.fromJson(data);
+  }
+
+  @override
+  Future<UserModel> updateAvatar(String filePath) async {
+    final fileName = filePath.split(RegExp(r'[/\\]')).last;
+    final formData = FormData.fromMap({
+      'avatar': await MultipartFile.fromFile(filePath, filename: fileName),
+    });
+    final response = await _apiClient.post(ApiEndpoints.updateAvatar, data: formData);
     final data = response['data'] as Map<String, dynamic>;
     return UserModel.fromJson(data);
   }

@@ -110,6 +110,23 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<UserEntity> updateAvatar(String filePath) async {
+    try {
+      final updatedUser = await _remoteDataSource.updateAvatar(filePath);
+      await _tokenStorage.saveUserMeta(
+        id: updatedUser.id,
+        name: updatedUser.name,
+        role: updatedUser.role,
+      );
+      return updatedUser;
+    } on ServerException catch (e) {
+      throw ServerFailure(e.message, e.statusCode);
+    } catch (e) {
+      throw ServerFailure(e.toString());
+    }
+  }
+
+  @override
   Future<void> logout() async {
     try {
       await _remoteDataSource.logout();

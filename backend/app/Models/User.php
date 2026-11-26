@@ -23,7 +23,21 @@ class User extends Authenticatable
         'role',
         'fcm_token',
         'locale',
+        'avatar',
     ];
+
+    public function getAvatarUrlAttribute(): ?string
+    {
+        if (! $this->avatar) {
+            return null;
+        }
+
+        if (str_starts_with($this->avatar, 'http://') || str_starts_with($this->avatar, 'https://')) {
+            return $this->avatar;
+        }
+
+        return url('storage/' . $this->avatar);
+    }
 
     protected $hidden = [
         'password',

@@ -2,12 +2,14 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../../../core/config/app_config.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/glass_container.dart';
+import '../../../../core/utils/avatar_url_helper.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_logo.dart';
 import '../../../auth/domain/entities/user_entity.dart';
@@ -25,6 +27,7 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   String _currentUrl = AppConfig.baseUrl;
   bool _isTestingPing = false;
+  bool _isUploadingAvatar = false;
   String? _pingResult;
   bool? _pingSuccess;
 
@@ -82,6 +85,131 @@ class _SettingsPageState extends State<SettingsPage> {
     _testConnection();
   }
 
+  Future<void> _pickAndUploadAvatar(bool isArabic) async {
+    final ImagePicker picker = ImagePicker();
+
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => GlassContainer(
+        borderRadius: 24,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Text(
+              isArabic ? "تغيير الصورة الشخصية" : "Change Profile Photo",
+              style: AppTypography.getHeading3(isArabic: isArabic),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              isArabic
+                  ? "اختر مصدراً لرفع صورتك الشخصية الجديدة"
+                  : "Choose a source to upload your profile photo",
+              style: AppTypography.getCaption(isArabic: isArabic),
+            ),
+            const SizedBox(height: 20),
+            ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tileColor: AppColors.surfaceInput,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: AppColors.accentRoseSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.photo_library_rounded,
+                    color: AppColors.accentRoseText, size: 20),
+              ),
+              title: Text(
+                isArabic ? "اختيار من المعرض" : "Choose from Gallery",
+                style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+              ),
+              onTap: () => Navigator.pop(ctx, ImageSource.gallery),
+            ),
+            const SizedBox(height: 10),
+            ListTile(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              tileColor: AppColors.surfaceInput,
+              leading: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: const BoxDecoration(
+                  color: AppColors.accentRoseSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.camera_alt_rounded,
+                    color: AppColors.accentRoseText, size: 20),
+              ),
+              title: Text(
+                isArabic ? "التقاط بالكاميرا" : "Take Photo with Camera",
+                style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.white),
+              ),
+              onTap: () => Navigator.pop(ctx, ImageSource.camera),
+            ),
+            const SizedBox(height: 12),
+          ],
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    try {
+      final XFile? file = await picker.pickImage(
+        source: source,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+
+      if (file == null) return;
+
+      if (!mounted) return;
+      setState(() => _isUploadingAvatar = true);
+
+      await context.read<AuthCubit>().updateAvatar(file.path);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isArabic
+                ? "تم تحديث الصورة الشخصية بنجاح"
+                : "Profile photo updated successfully",
+          ),
+          backgroundColor: AppColors.statusReady,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            isArabic
+                ? "حدث خطأ أثناء رفع الصورة: $e"
+                : "Failed to upload photo: $e",
+          ),
+          backgroundColor: AppColors.statusDanger,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingAvatar = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isArabic = context.watch<LocaleCubit>().isArabic;
@@ -106,14 +234,88 @@ class _SettingsPageState extends State<SettingsPage> {
                     children: [
                       Row(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: const BoxDecoration(
-                              color: AppColors.accentRoseSoft,
-                              shape: BoxShape.circle,
+                          GestureDetector(
+                            onTap: _isUploadingAvatar
+                                ? null
+                                : () => _pickAndUploadAvatar(isArabic),
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Container(
+                                  width: 66,
+                                  height: 66,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceInput,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: AppColors.primaryCrimson.withValues(alpha: 0.5),
+                                      width: 2,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppColors.primaryCrimson.withValues(alpha: 0.2),
+                                        blurRadius: 10,
+                                        spreadRadius: 1,
+                                      ),
+                                    ],
+                                  ),
+                                  clipBehavior: Clip.antiAlias,
+                                  child: _isUploadingAvatar
+                                      ? const Center(
+                                          child: SizedBox(
+                                            width: 24,
+                                            height: 24,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2.5,
+                                              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryCrimson),
+                                            ),
+                                          ),
+                                        )
+                                      : (user.avatarUrl != null && user.avatarUrl!.isNotEmpty)
+                                          ? Image.network(
+                                              resolveAvatarUrl(user.avatarUrl),
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (_, __, ___) => const Center(
+                                                child: Icon(Icons.person_rounded, size: 34, color: AppColors.accentRoseText),
+                                              ),
+                                              loadingBuilder: (context, child, loadingProgress) {
+                                                if (loadingProgress == null) return child;
+                                                return const Center(
+                                                  child: SizedBox(
+                                                    width: 22,
+                                                    height: 22,
+                                                    child: CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                      valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryCrimson),
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            )
+                                          : const Center(
+                                              child: Icon(Icons.person_rounded, size: 34, color: AppColors.accentRoseText),
+                                            ),
+                                ),
+                                Positioned(
+                                  bottom: -2,
+                                  right: isArabic ? null : -2,
+                                  left: isArabic ? -2 : null,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primaryCrimson,
+                                      shape: BoxShape.circle,
+                                      border: Border.all(color: AppColors.bgPrimary, width: 2),
+                                    ),
+                                    child: const Icon(
+                                      Icons.camera_alt_rounded,
+                                      size: 13,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            child: const Icon(Icons.person_rounded,
-                                size: 30, color: AppColors.accentRoseText),
                           ),
                           const SizedBox(width: 14),
                           Expanded(
