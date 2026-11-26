@@ -9,7 +9,7 @@ import '../../domain/entities/vehicle_entity.dart';
 class VehicleHeroCard extends StatefulWidget {
   final VehicleEntity vehicle;
   final bool isArabic;
-  final Function(bool wantsWash, String washType, String? notes) onTakeCarOut;
+  final Function(bool wantsWash, String washType, DateTime? scheduledFor, String? notes) onTakeCarOut;
   final Function(int requestId) onCancelRequest;
 
   const VehicleHeroCard({
@@ -27,6 +27,53 @@ class VehicleHeroCard extends StatefulWidget {
 class _VehicleHeroCardState extends State<VehicleHeroCard> {
   bool _wantsWash = false;
   String _selectedWashType = 'exterior';
+  bool _isScheduledDeparture = false;
+  TimeOfDay _selectedDepartureTime =
+      TimeOfDay.fromDateTime(DateTime.now().add(const Duration(minutes: 30)));
+  int _selectedPresetMinutes = 30;
+
+  String _formatTimeOfDay(TimeOfDay tod, bool isArabic) {
+    final hour12 = tod.hourOfPeriod == 0 ? 12 : tod.hourOfPeriod;
+    final minuteStr = tod.minute.toString().padLeft(2, '0');
+    final periodStr = isArabic
+        ? (tod.period == DayPeriod.am ? 'ص' : 'م')
+        : (tod.period == DayPeriod.am ? 'AM' : 'PM');
+    return '$hour12:$minuteStr $periodStr';
+  }
+
+  void _applyPresetMinutes(int minutes) {
+    final target = DateTime.now().add(Duration(minutes: minutes));
+    setState(() {
+      _selectedPresetMinutes = minutes;
+      _selectedDepartureTime = TimeOfDay.fromDateTime(target);
+    });
+  }
+
+  Future<void> _pickCustomTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedDepartureTime,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.dark(
+              primary: AppColors.primaryCrimson,
+              surface: AppColors.bgElevated,
+              onSurface: Colors.white,
+            ),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedPresetMinutes = -1; // custom
+        _selectedDepartureTime = picked;
+      });
+    }
+  }
 
   Color _parseHex(String hex) {
     try {
@@ -282,8 +329,215 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
   }
 
   Widget _buildTakeOutControls() {
+    final isAr = widget.isArabic;
+
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Timing Mode Switcher (Now vs Scheduled Time)
+        Container(
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceInput,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white10),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _isScheduledDeparture = false),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: !_isScheduledDeparture
+                          ? AppColors.accentRoseSoft
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.flash_on_rounded,
+                            size: 15,
+                            color: !_isScheduledDeparture
+                                ? AppColors.accentRoseText
+                                : AppColors.textMuted,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            isAr ? "الآن (~10 دقائق)" : "Now (~10 min)",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: !_isScheduledDeparture
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: !_isScheduledDeparture
+                                  ? AppColors.accentRoseText
+                                  : AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: GestureDetector(
+                  onTap: () => setState(() => _isScheduledDeparture = true),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _isScheduledDeparture
+                          ? AppColors.accentRoseSoft
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(9),
+                    ),
+                    child: Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.schedule_rounded,
+                            size: 15,
+                            color: _isScheduledDeparture
+                                ? AppColors.accentRoseText
+                                : AppColors.textMuted,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            isAr ? "تحديد موعد لاحق" : "Pick Later Time",
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: _isScheduledDeparture
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              color: _isScheduledDeparture
+                                  ? AppColors.accentRoseText
+                                  : AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+
+        // Scheduled Timing Details & Preset Quick-Chips
+        if (_isScheduledDeparture) ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceInput,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                  color: AppColors.primaryCrimson.withValues(alpha: 0.35)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.access_time_filled_rounded,
+                            color: AppColors.statusScheduled, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          isAr ? "الموعد المطلوب لتجهيز سيارتك:" : "Desired Ready Time:",
+                          style: AppTypography.getCaption(isArabic: isAr),
+                        ),
+                      ],
+                    ),
+                    GestureDetector(
+                      onTap: _pickCustomTime,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryCrimson.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: AppColors.primaryCrimson.withValues(alpha: 0.6)),
+                        ),
+                        child: Text(
+                          _formatTimeOfDay(_selectedDepartureTime, isAr),
+                          style: AppTypography.getTelemetry(
+                            fontSize: 13,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                // Quick Presets Row
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildPresetChip(15, isAr ? "+15 دقيقة" : "+15m"),
+                      const SizedBox(width: 6),
+                      _buildPresetChip(30, isAr ? "+30 دقيقة" : "+30m"),
+                      const SizedBox(width: 6),
+                      _buildPresetChip(60, isAr ? "+ساعة" : "+1 hr"),
+                      const SizedBox(width: 6),
+                      _buildPresetChip(120, isAr ? "+ساعتين" : "+2 hrs"),
+                      const SizedBox(width: 6),
+                      GestureDetector(
+                        onTap: _pickCustomTime,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: _selectedPresetMinutes == -1
+                                ? AppColors.accentRoseSoft
+                                : AppColors.bgElevated,
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(
+                              color: _selectedPresetMinutes == -1
+                                  ? AppColors.primaryCrimson
+                                  : Colors.white12,
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.edit_calendar_rounded,
+                                  size: 13, color: AppColors.textSecondary),
+                              const SizedBox(width: 4),
+                              Text(
+                                isAr ? "تحديد يدوي..." : "Custom...",
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+
+        const SizedBox(height: 12),
+
         // Wash Toggle Switch
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
@@ -293,11 +547,14 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
           ),
           child: Row(
             children: [
-              const Icon(Icons.local_car_wash_rounded, color: AppColors.statusWashing, size: 22),
+              const Icon(Icons.local_car_wash_rounded,
+                  color: AppColors.statusWashing, size: 22),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  widget.isArabic ? "غسيل السيارة قبل الخروج" : "Wash car before departure",
+                  widget.isArabic
+                      ? "غسيل السيارة قبل الخروج"
+                      : "Wash car before departure",
                   style: AppTypography.getBodyMedium(isArabic: widget.isArabic),
                 ),
               ),
@@ -316,11 +573,13 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
           Row(
             children: [
               Expanded(
-                child: _buildWashTypePill('exterior', widget.isArabic ? "غسيل خارجي" : "Exterior Wash"),
+                child: _buildWashTypePill('exterior',
+                    widget.isArabic ? "غسيل خارجي" : "Exterior Wash"),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: _buildWashTypePill('full', widget.isArabic ? "غسيل شامل داخلي/خارجي" : "Full Wash"),
+                child: _buildWashTypePill('full',
+                    widget.isArabic ? "غسيل شامل داخلي/خارجي" : "Full Wash"),
               ),
             ],
           ),
@@ -329,13 +588,62 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
 
         // Primary Tactile Button
         AppButton(
-          text: widget.isArabic ? "طلب إخراج السيارة الآن" : "Take Car Out Now",
+          text: _isScheduledDeparture
+              ? (isAr
+                  ? "تأكيد طلب الخروج في (${_formatTimeOfDay(_selectedDepartureTime, true)})"
+                  : "Schedule Ready at ${_formatTimeOfDay(_selectedDepartureTime, false)}")
+              : (isAr ? "طلب إخراج السيارة الآن" : "Take Car Out Now"),
           icon: Icons.directions_car_rounded,
           onPressed: () {
-            widget.onTakeCarOut(_wantsWash, _selectedWashType, null);
+            DateTime? targetDateTime;
+            if (_isScheduledDeparture) {
+              final now = DateTime.now();
+              targetDateTime = DateTime(
+                now.year,
+                now.month,
+                now.day,
+                _selectedDepartureTime.hour,
+                _selectedDepartureTime.minute,
+              );
+              if (targetDateTime.isBefore(now)) {
+                targetDateTime = targetDateTime.add(const Duration(days: 1));
+              }
+            }
+            widget.onTakeCarOut(
+              _wantsWash,
+              _selectedWashType,
+              targetDateTime,
+              null,
+            );
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildPresetChip(int minutes, String label) {
+    final isSelected = _selectedPresetMinutes == minutes;
+    return GestureDetector(
+      onTap: () => _applyPresetMinutes(minutes),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.accentRoseSoft : AppColors.bgElevated,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryCrimson : Colors.white12,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? AppColors.accentRoseText : Colors.white70,
+          ),
+        ),
+      ),
     );
   }
 

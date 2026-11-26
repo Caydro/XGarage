@@ -18,6 +18,7 @@ Route::prefix('v1')->group(function () {
 
         Route::middleware('auth:sanctum')->group(function () {
             Route::get('/me', [AuthController::class, 'me']);
+            Route::put('/profile', [AuthController::class, 'updateProfile']);
             Route::post('/fcm-token', [AuthController::class, 'updateFcmToken']);
             Route::post('/logout', [AuthController::class, 'logout']);
         });

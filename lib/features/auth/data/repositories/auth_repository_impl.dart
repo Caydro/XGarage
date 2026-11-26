@@ -81,6 +81,35 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<UserEntity> updateProfile({
+    required String name,
+    required String phone,
+    String? email,
+    String? password,
+  }) async {
+    try {
+      final payload = {
+        'name': name,
+        'phone': phone,
+        if (email != null) 'email': email,
+        if (password != null && password.isNotEmpty) 'password': password,
+      };
+
+      final updatedUser = await _remoteDataSource.updateProfile(payload);
+      await _tokenStorage.saveUserMeta(
+        id: updatedUser.id,
+        name: updatedUser.name,
+        role: updatedUser.role,
+      );
+      return updatedUser;
+    } on ServerException catch (e) {
+      throw ServerFailure(e.message, e.statusCode);
+    } catch (e) {
+      throw ServerFailure(e.toString());
+    }
+  }
+
+  @override
   Future<void> logout() async {
     try {
       await _remoteDataSource.logout();

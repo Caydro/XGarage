@@ -156,16 +156,20 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
                         VehicleHeroCard(
                           vehicle: vehicle,
                           isArabic: isArabic,
-                          onTakeCarOut: (wantsWash, washType, notes) {
+                          onTakeCarOut:
+                              (wantsWash, washType, scheduledFor, notes) {
                             context.read<OwnerCubit>().requestImmediatePickup(
                                   vehicleId: vehicle.id,
+                                  scheduledFor: scheduledFor,
                                   wantsWash: wantsWash,
                                   washType: washType,
                                   notes: notes,
                                 );
                           },
                           onCancelRequest: (requestId) {
-                            context.read<OwnerCubit>().cancelActiveRequest(requestId);
+                            context
+                                .read<OwnerCubit>()
+                                .cancelActiveRequest(requestId);
                           },
                         )
                       else

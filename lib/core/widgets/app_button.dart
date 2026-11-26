@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import 'jumping_dots_indicator.dart';
 
 enum AppButtonVariant { primary, secondary, glass, outline, destructive }
 
@@ -113,13 +114,11 @@ class _AppButtonState extends State<AppButton> {
         child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 200),
           child: widget.isLoading
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.5,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
+              ? JumpingDotsIndicator(
+                  color: textColor,
+                  dotSize: 7.5,
+                  jumpHeight: 7.0,
+                  spacing: 5.5,
                 )
               : Row(
                   mainAxisSize: MainAxisSize.min,

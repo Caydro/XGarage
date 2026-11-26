@@ -8,8 +8,11 @@ class OwnerCubit extends Cubit<OwnerState> {
 
   OwnerCubit(this._repository) : super(OwnerInitial());
 
-  Future<void> loadDashboard() async {
-    emit(OwnerLoading());
+  Future<void> loadDashboard({bool isInitial = false}) async {
+    // Only show full skeleton/spinner on initial open without existing data
+    if (state is OwnerInitial || isInitial) {
+      emit(OwnerLoading());
+    }
     try {
       final data = await _repository.getDashboard();
       if (isClosed) return;
@@ -28,7 +31,9 @@ class OwnerCubit extends Cubit<OwnerState> {
       ));
     } catch (e) {
       if (isClosed) return;
-      emit(OwnerError(e.toString()));
+      if (state is! OwnerLoaded) {
+        emit(OwnerError(e.toString()));
+      }
     }
   }
 
@@ -44,6 +49,7 @@ class OwnerCubit extends Cubit<OwnerState> {
 
   Future<void> requestImmediatePickup({
     required int vehicleId,
+    DateTime? scheduledFor,
     required bool wantsWash,
     String? washType,
     String? notes,
@@ -51,17 +57,20 @@ class OwnerCubit extends Cubit<OwnerState> {
     try {
       await _repository.createPickupRequest(
         vehicleId: vehicleId,
-        scheduledFor: null, // immediate
+        scheduledFor: scheduledFor,
         wantsWash: wantsWash,
         washType: washType,
         ownerNotes: notes,
       );
 
       if (isClosed) return;
-      await loadDashboard();
+      await loadDashboard(isInitial: false);
     } catch (e) {
       if (isClosed) return;
-      emit(OwnerError(e.toString()));
+      if (state is! OwnerLoaded) {
+        emit(OwnerError(e.toString()));
+      }
+      rethrow;
     }
   }
 
@@ -69,10 +78,13 @@ class OwnerCubit extends Cubit<OwnerState> {
     try {
       await _repository.cancelPickupRequest(requestId);
       if (isClosed) return;
-      await loadDashboard();
+      await loadDashboard(isInitial: false);
     } catch (e) {
       if (isClosed) return;
-      emit(OwnerError(e.toString()));
+      if (state is! OwnerLoaded) {
+        emit(OwnerError(e.toString()));
+      }
+      rethrow;
     }
   }
 
@@ -97,10 +109,13 @@ class OwnerCubit extends Cubit<OwnerState> {
       );
 
       if (isClosed) return;
-      await loadDashboard();
+      await loadDashboard(isInitial: false);
     } catch (e) {
       if (isClosed) return;
-      emit(OwnerError(e.toString()));
+      if (state is! OwnerLoaded) {
+        emit(OwnerError(e.toString()));
+      }
+      rethrow;
     }
   }
 
@@ -127,10 +142,13 @@ class OwnerCubit extends Cubit<OwnerState> {
       );
 
       if (isClosed) return;
-      await loadDashboard();
+      await loadDashboard(isInitial: false);
     } catch (e) {
       if (isClosed) return;
-      emit(OwnerError(e.toString()));
+      if (state is! OwnerLoaded) {
+        emit(OwnerError(e.toString()));
+      }
+      rethrow;
     }
   }
 }

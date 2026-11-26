@@ -16,5 +16,11 @@ abstract class AuthRepository {
     String? plateNumbers,
   });
   Future<UserEntity?> getCurrentUser();
+  Future<UserEntity> updateProfile({
+    required String name,
+    required String phone,
+    String? email,
+    String? password,
+  });
   Future<void> logout();
 }

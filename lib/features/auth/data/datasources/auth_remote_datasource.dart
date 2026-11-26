@@ -6,6 +6,7 @@ abstract class AuthRemoteDataSource {
   Future<(UserModel, String)> login({required String login, required String password});
   Future<(UserModel, String)> register(Map<String, dynamic> payload);
   Future<UserModel> getMe();
+  Future<UserModel> updateProfile(Map<String, dynamic> payload);
   Future<void> logout();
 }
 
@@ -39,6 +40,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<UserModel> getMe() async {
     final response = await _apiClient.get(ApiEndpoints.me);
+    final data = response['data'] as Map<String, dynamic>;
+    return UserModel.fromJson(data);
+  }
+
+  @override
+  Future<UserModel> updateProfile(Map<String, dynamic> payload) async {
+    final response = await _apiClient.put(ApiEndpoints.updateProfile, data: payload);
     final data = response['data'] as Map<String, dynamic>;
     return UserModel.fromJson(data);
   }

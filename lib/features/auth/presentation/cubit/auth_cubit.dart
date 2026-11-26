@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'auth_state.dart';
 
@@ -75,6 +76,24 @@ class AuthCubit extends Cubit<AuthState> {
       if (isClosed) return;
       emit(AuthError(e.toString()));
     }
+  }
+
+  Future<UserEntity> updateProfile({
+    required String name,
+    required String phone,
+    String? email,
+    String? password,
+  }) async {
+    final updatedUser = await _authRepository.updateProfile(
+      name: name,
+      phone: phone,
+      email: email,
+      password: password,
+    );
+    if (!isClosed) {
+      emit(Authenticated(updatedUser));
+    }
+    return updatedUser;
   }
 
   void _syncFcmToken() {

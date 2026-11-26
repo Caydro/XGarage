@@ -68,6 +68,35 @@ class AuthController extends Controller
         );
     }
 
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:20', 'unique:users,phone,' . $user->id],
+            'email' => ['nullable', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'password' => ['nullable', 'string', 'min:6'],
+        ]);
+
+        $updateData = [
+            'name' => $validated['name'],
+            'phone' => $validated['phone'],
+            'email' => $validated['email'] ?? null,
+        ];
+
+        if (! empty($validated['password'])) {
+            $updateData['password'] = \Illuminate\Support\Facades\Hash::make($validated['password']);
+        }
+
+        $user->update($updateData);
+
+        return $this->successResponse(
+            data: new UserResource($user->fresh()),
+            message: 'Profile updated successfully.'
+        );
+    }
+
     public function updateFcmToken(Request $request): JsonResponse
     {
         $validated = $request->validate([

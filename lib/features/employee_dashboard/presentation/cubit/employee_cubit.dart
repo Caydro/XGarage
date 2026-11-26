@@ -7,11 +7,14 @@ class EmployeeCubit extends Cubit<EmployeeState> {
 
   EmployeeCubit(this._repository) : super(EmployeeInitial());
 
-  Future<void> loadQueue({String? filter, String? search}) async {
+  Future<void> loadQueue({String? filter, String? search, bool isInitial = false}) async {
     final currentFilter = filter ?? (state is EmployeeLoaded ? (state as EmployeeLoaded).activeFilter : 'all');
     final currentSearch = search ?? (state is EmployeeLoaded ? (state as EmployeeLoaded).searchQuery : '');
 
-    emit(EmployeeLoading());
+    // Only emit full loading on initial cold load to avoid wiping the UI on live updates
+    if (state is EmployeeInitial || isInitial) {
+      emit(EmployeeLoading());
+    }
     try {
       final queue = await _repository.getQueue(filter: currentFilter, search: currentSearch);
       final summary = await _repository.getSummary();
@@ -25,18 +28,20 @@ class EmployeeCubit extends Cubit<EmployeeState> {
       ));
     } catch (e) {
       if (isClosed) return;
-      emit(EmployeeError(e.toString()));
+      if (state is! EmployeeLoaded) {
+        emit(EmployeeError(e.toString()));
+      }
     }
   }
 
   Future<void> changeFilter(String newFilter) async {
     final search = state is EmployeeLoaded ? (state as EmployeeLoaded).searchQuery : null;
-    await loadQueue(filter: newFilter, search: search);
+    await loadQueue(filter: newFilter, search: search, isInitial: false);
   }
 
   Future<void> search(String query) async {
     final filter = state is EmployeeLoaded ? (state as EmployeeLoaded).activeFilter : 'all';
-    await loadQueue(filter: filter, search: query);
+    await loadQueue(filter: filter, search: query, isInitial: false);
   }
 
   Future<void> updateSpot({
@@ -51,10 +56,13 @@ class EmployeeCubit extends Cubit<EmployeeState> {
         keyHook: keyHook,
       );
       if (isClosed) return;
-      await loadQueue();
+      await loadQueue(isInitial: false);
     } catch (e) {
       if (isClosed) return;
-      emit(EmployeeError(e.toString()));
+      if (state is! EmployeeLoaded) {
+        emit(EmployeeError(e.toString()));
+      }
+      rethrow;
     }
   }
 
@@ -72,10 +80,13 @@ class EmployeeCubit extends Cubit<EmployeeState> {
         notes: notes,
       );
       if (isClosed) return;
-      await loadQueue();
+      await loadQueue(isInitial: false);
     } catch (e) {
       if (isClosed) return;
-      emit(EmployeeError(e.toString()));
+      if (state is! EmployeeLoaded) {
+        emit(EmployeeError(e.toString()));
+      }
+      rethrow;
     }
   }
 }

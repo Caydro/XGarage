@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/glass_container.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_logo.dart';
+import '../../../auth/domain/entities/user_entity.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
 import '../locale_cubit.dart';
@@ -101,54 +102,91 @@ class _SettingsPageState extends State<SettingsPage> {
               if (user != null)
                 GlassContainer(
                   padding: const EdgeInsets.all(18),
-                  child: Row(
+                  child: Column(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: const BoxDecoration(
-                          color: AppColors.accentRoseSoft,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(Icons.person_rounded,
-                            size: 30, color: AppColors.accentRoseText),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(14),
+                            decoration: const BoxDecoration(
+                              color: AppColors.accentRoseSoft,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.person_rounded,
+                                size: 30, color: AppColors.accentRoseText),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user.name,
+                                  style: AppTypography.getHeading3(
+                                      isArabic: isArabic),
+                                ),
+                                Text(
+                                  user.phone,
+                                  style: AppTypography.getCaption(
+                                      isArabic: isArabic),
+                                ),
+                                if (user.email != null &&
+                                    user.email!.isNotEmpty) ...[
+                                  const SizedBox(height: 1),
+                                  Text(
+                                    user.email!,
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.textMuted,
+                                    ),
+                                  ),
+                                ],
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceInput,
+                                    borderRadius: BorderRadius.circular(6),
+                                  ),
+                                  child: Text(
+                                    user.isEmployee
+                                        ? (isArabic
+                                            ? "فريق عمل الجراج"
+                                            : "Valet Staff")
+                                        : (isArabic
+                                            ? "مالك سيارة"
+                                            : "Car Owner"),
+                                    style: const TextStyle(
+                                        fontSize: 10,
+                                        color: AppColors.primaryCrimson,
+                                        fontWeight: FontWeight.w700),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.edit_note_rounded,
+                                color: AppColors.accentRoseText, size: 26),
+                            tooltip: isArabic
+                                ? "تعديل البيانات الشخصية"
+                                : "Edit Profile",
+                            onPressed: () =>
+                                _openEditProfileSheet(context, user, isArabic),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              user.name,
-                              style:
-                                  AppTypography.getHeading3(isArabic: isArabic),
-                            ),
-                            Text(
-                              user.phone,
-                              style:
-                                  AppTypography.getCaption(isArabic: isArabic),
-                            ),
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceInput,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                user.isEmployee
-                                    ? (isArabic
-                                        ? "فريق عمل الجراج"
-                                        : "Valet Staff")
-                                    : (isArabic ? "مالك سيارة" : "Car Owner"),
-                                style: const TextStyle(
-                                    fontSize: 10,
-                                    color: AppColors.primaryCrimson,
-                                    fontWeight: FontWeight.w700),
-                              ),
-                            ),
-                          ],
-                        ),
+                      const SizedBox(height: 12),
+                      AppButton(
+                        text: isArabic
+                            ? "تعديل بيانات الحساب ورقم الهاتف"
+                            : "Edit Profile & Phone Number",
+                        icon: Icons.edit_outlined,
+                        variant: AppButtonVariant.glass,
+                        height: 42,
+                        onPressed: () =>
+                            _openEditProfileSheet(context, user, isArabic),
                       ),
                     ],
                   ),
@@ -373,6 +411,309 @@ class _SettingsPageState extends State<SettingsPage> {
               const SizedBox(height: 16),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  void _openEditProfileSheet(
+      BuildContext context, UserEntity user, bool isArabic) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) =>
+          _EditProfileBottomSheet(user: user, isArabic: isArabic),
+    );
+  }
+}
+
+class _EditProfileBottomSheet extends StatefulWidget {
+  final UserEntity user;
+  final bool isArabic;
+
+  const _EditProfileBottomSheet({
+    required this.user,
+    required this.isArabic,
+  });
+
+  @override
+  State<_EditProfileBottomSheet> createState() =>
+      _EditProfileBottomSheetState();
+}
+
+class _EditProfileBottomSheetState extends State<_EditProfileBottomSheet> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _phoneController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _passwordController;
+
+  bool _obscurePassword = true;
+  bool _isSaving = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.user.name);
+    _phoneController = TextEditingController(text: widget.user.phone);
+    _emailController = TextEditingController(text: widget.user.email ?? '');
+    _passwordController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleSave() async {
+    final name = _nameController.text.trim();
+    final phone = _phoneController.text.trim();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (name.isEmpty) {
+      setState(() {
+        _errorMessage = widget.isArabic
+            ? "يرجى كتابة الاسم بالكامل"
+            : "Full name cannot be empty";
+      });
+      return;
+    }
+
+    if (phone.isEmpty) {
+      setState(() {
+        _errorMessage = widget.isArabic
+            ? "يرجى كتابة رقم الهاتف"
+            : "Phone number cannot be empty";
+      });
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+      _errorMessage = null;
+    });
+
+    try {
+      await context.read<AuthCubit>().updateProfile(
+            name: name,
+            phone: phone,
+            email: email.isEmpty ? null : email,
+            password: password.isEmpty ? null : password,
+          );
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded,
+                    color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                Text(
+                  widget.isArabic
+                      ? "تم تحديث بياناتك بنجاح!"
+                      : "Profile updated successfully!",
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ],
+            ),
+            backgroundColor: AppColors.statusReady,
+            behavior: SnackBarBehavior.floating,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception:', '').trim();
+          _isSaving = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isAr = widget.isArabic;
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, 20 + bottomInset),
+      decoration: const BoxDecoration(
+        color: AppColors.bgElevated,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        border: Border(top: BorderSide(color: Colors.white12, width: 1.2)),
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Drag handle
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+
+            // Sheet Title
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.person_pin_rounded,
+                        color: AppColors.accentRoseText, size: 24),
+                    const SizedBox(width: 10),
+                    Text(
+                      isAr
+                          ? "تعديل البيانات الشخصية"
+                          : "Edit Profile Information",
+                      style: AppTypography.getHeading3(isArabic: isAr),
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.close_rounded,
+                      color: AppColors.textMuted),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            if (_errorMessage != null) ...[
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.statusDangerBg,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                      color: AppColors.statusDanger.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline_rounded,
+                        color: AppColors.statusDanger, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _errorMessage!,
+                        style: const TextStyle(
+                            color: AppColors.statusDanger, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+            ],
+
+            // Full Name Field
+            Text(
+              isAr ? "الاسم بالكامل" : "Full Name",
+              style: AppTypography.getCaption(isArabic: isAr),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.person_outline_rounded,
+                    color: AppColors.textMuted),
+                hintText: isAr ? "أحمد محمد" : "Ahmed Mohamed",
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Phone Number Field
+            Text(
+              isAr ? "رقم الهاتف (لتسجيل الدخول والتواصل)" : "Phone Number",
+              style: AppTypography.getCaption(isArabic: isAr),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.phone_outlined,
+                    color: AppColors.textMuted),
+                hintText: "01000000001",
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Email Address Field
+            Text(
+              isAr ? "البريد الإلكتروني (اختياري)" : "Email Address (Optional)",
+              style: AppTypography.getCaption(isArabic: isAr),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _emailController,
+              keyboardType: TextInputType.emailAddress,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.email_outlined,
+                    color: AppColors.textMuted),
+                hintText: "user@example.com",
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Password Change Field
+            Text(
+              isAr
+                  ? "تغيير كلمة المرور (اتركها فارغة إن لم ترغب في التغيير)"
+                  : "Change Password (Leave blank to keep current)",
+              style: AppTypography.getCaption(isArabic: isAr),
+            ),
+            const SizedBox(height: 6),
+            TextField(
+              controller: _passwordController,
+              obscureText: _obscurePassword,
+              decoration: InputDecoration(
+                prefixIcon:
+                    const Icon(Icons.lock_outline_rounded, color: AppColors.textMuted),
+                suffixIcon: IconButton(
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded,
+                    color: AppColors.textMuted,
+                    size: 20,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                ),
+                hintText: isAr ? "••••••••" : "••••••••",
+              ),
+            ),
+            const SizedBox(height: 22),
+
+            // Save Changes CTA Button with 3 Jumping Dots
+            AppButton(
+              text: isAr ? "حفظ التغييرات" : "Save Changes",
+              icon: Icons.check_rounded,
+              isLoading: _isSaving,
+              onPressed: _handleSave,
+            ),
+            const SizedBox(height: 10),
+          ],
         ),
       ),
     );
