@@ -8,6 +8,8 @@ import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/widgets/notifications_sheet.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../settings/presentation/locale_cubit.dart';
+import '../../../auth/presentation/cubit/auth_cubit.dart';
+import '../../../auth/presentation/cubit/auth_state.dart';
 import '../cubit/owner_cubit.dart';
 import '../cubit/owner_state.dart';
 import '../widgets/add_vehicle_sheet.dart';
@@ -28,7 +30,8 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
     context.read<OwnerCubit>().loadDashboard();
   }
 
-  void _openScheduleSheet(BuildContext context, dynamic vehicle, bool isArabic) {
+  void _openScheduleSheet(
+      BuildContext context, dynamic vehicle, bool isArabic) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -94,6 +97,8 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
   @override
   Widget build(BuildContext context) {
     final isArabic = context.watch<LocaleCubit>().isArabic;
+    final authState = context.watch<AuthCubit>().state;
+    final userName = authState is Authenticated ? authState.user.name : null;
 
     return Scaffold(
       body: SafeArea(
@@ -111,7 +116,9 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
           builder: (context, state) {
             if (state is OwnerLoading) {
               return StateViews.loading(
-                message: isArabic ? "جاري تحميل بيانات سيارتك..." : "Loading vehicle details...",
+                message: isArabic
+                    ? "جاري تحميل بيانات سيارتك..."
+                    : "Loading vehicle details...",
               );
             }
 
@@ -131,7 +138,8 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
                 onRefresh: () => context.read<OwnerCubit>().loadDashboard(),
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -147,7 +155,8 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
 
                       // Recurring Schedule Summary Card
                       if (vehicle != null) ...[
-                        _buildScheduleSummaryCard(context, vehicle, state, isArabic),
+                        _buildScheduleSummaryCard(
+                            context, vehicle, state, isArabic),
                         const SizedBox(height: 18),
                       ],
 
@@ -155,6 +164,7 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
                       if (vehicle != null)
                         VehicleHeroCard(
                           vehicle: vehicle,
+                          ownerName: vehicle.ownerName ?? userName,
                           isArabic: isArabic,
                           onTakeCarOut:
                               (wantsWash, washType, scheduledFor, notes) {
@@ -175,12 +185,16 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
                       else
                         StateViews.empty(
                           icon: Icons.directions_car_rounded,
-                          title: isArabic ? "لا توجد سيارات مسجلة" : "No Vehicles Registered",
+                          title: isArabic
+                              ? "لا توجد سيارات مسجلة"
+                              : "No Vehicles Registered",
                           message: isArabic
                               ? "أضف سيارتك الأولى لبدء جدولة الخروج والغسيل"
                               : "Add your first vehicle to start scheduling departures and valet wash.",
-                          buttonText: isArabic ? "إضافة سيارة الآن" : "Add Vehicle Now",
-                          onAction: () => _openAddVehicleSheet(context, isArabic),
+                          buttonText:
+                              isArabic ? "إضافة سيارة الآن" : "Add Vehicle Now",
+                          onAction: () =>
+                              _openAddVehicleSheet(context, isArabic),
                         ),
                     ],
                   ),
@@ -232,8 +246,7 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
             GestureDetector(
               onTap: () => context.read<LocaleCubit>().toggleLocale(),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                 decoration: BoxDecoration(
                   color: AppColors.surfaceInput,
                   borderRadius: BorderRadius.circular(10),
@@ -270,7 +283,8 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
     );
   }
 
-  Widget _buildVehiclePillSelector(BuildContext context, OwnerLoaded state, bool isArabic) {
+  Widget _buildVehiclePillSelector(
+      BuildContext context, OwnerLoaded state, bool isArabic) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -281,12 +295,17 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
               onTap: () => context.read<OwnerCubit>().selectPrimaryVehicle(v),
               child: Container(
                 margin: const EdgeInsets.only(right: 8, left: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.accentRoseSoft : AppColors.surfaceInput,
+                  color: isSelected
+                      ? AppColors.accentRoseSoft
+                      : AppColors.surfaceInput,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: isSelected ? AppColors.primaryCrimson : Colors.transparent,
+                    color: isSelected
+                        ? AppColors.primaryCrimson
+                        : Colors.transparent,
                     width: 1.2,
                   ),
                 ),
@@ -295,15 +314,19 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
                     Icon(
                       Icons.directions_car_rounded,
                       size: 16,
-                      color: isSelected ? AppColors.accentRoseText : AppColors.textMuted,
+                      color: isSelected
+                          ? AppColors.accentRoseText
+                          : AppColors.textMuted,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       '${v.make} ${v.model}',
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                        color: isSelected ? Colors.white : AppColors.textSecondary,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color:
+                            isSelected ? Colors.white : AppColors.textSecondary,
                       ),
                     ),
                   ],
@@ -318,7 +341,8 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
               decoration: BoxDecoration(
                 color: Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white24, style: BorderStyle.solid),
+                border:
+                    Border.all(color: Colors.white24, style: BorderStyle.solid),
               ),
               child: Row(
                 children: [
@@ -337,7 +361,8 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
     );
   }
 
-  Widget _buildScheduleSummaryCard(BuildContext context, dynamic vehicle, OwnerLoaded state, bool isArabic) {
+  Widget _buildScheduleSummaryCard(
+      BuildContext context, dynamic vehicle, OwnerLoaded state, bool isArabic) {
     final sched = vehicle.dailySchedule;
     final bool hasSched = sched != null && sched.isActive;
 
@@ -348,7 +373,8 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: hasSched ? AppColors.accentRoseSoft : AppColors.surfaceInput,
+              color:
+                  hasSched ? AppColors.accentRoseSoft : AppColors.surfaceInput,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(
@@ -370,7 +396,9 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      hasSched ? sched.pickupTime : (isArabic ? "غير مفعل" : "Inactive"),
+                      hasSched
+                          ? sched.pickupTime
+                          : (isArabic ? "غير مفعل" : "Inactive"),
                       style: const TextStyle(
                         fontWeight: FontWeight.w800,
                         fontSize: 14,
@@ -384,10 +412,14 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
                       ? (isArabic
                           ? "إجازة: الجمعة • ${sched.includeWash ? 'مع غسيل دوري' : 'بدون غسيل'}"
                           : "Friday Off • ${sched.includeWash ? 'With auto-wash' : 'No wash'}")
-                      : (isArabic ? "اضغط لضبط روتينك الصباحي" : "Tap to configure morning routine"),
+                      : (isArabic
+                          ? "اضغط لضبط روتينك الصباحي"
+                          : "Tap to configure morning routine"),
                   style: TextStyle(
                     fontSize: 11,
-                    color: hasSched ? AppColors.textSecondary : AppColors.textMuted,
+                    color: hasSched
+                        ? AppColors.textSecondary
+                        : AppColors.textMuted,
                   ),
                 ),
               ],
@@ -398,7 +430,8 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
             style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               backgroundColor: AppColors.surfaceInput,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
             ),
             child: Text(
               isArabic ? "ضبط" : "Edit",

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/glass_container.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/license_plate_badge.dart';
 import '../../domain/entities/queue_item_entity.dart';
 
@@ -9,12 +10,14 @@ class EmployeeCarCard extends StatelessWidget {
   final QueueItemEntity item;
   final bool isArabic;
   final VoidCallback onActionTap;
+  final bool isLoading;
 
   const EmployeeCarCard({
     super.key,
     required this.item,
     required this.isArabic,
     required this.onActionTap,
+    this.isLoading = false,
   });
 
   Color _parseHex(String hex) {
@@ -124,10 +127,12 @@ class EmployeeCarCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          width: 10,
-                          height: 10,
+                          width: 9,
+                          height: 9,
+                          margin: const EdgeInsets.only(top: 4),
                           decoration: BoxDecoration(
                             color: carColor,
                             shape: BoxShape.circle,
@@ -139,21 +144,46 @@ class EmployeeCarCard extends StatelessWidget {
                           child: Text(
                             item.vehicleTitle,
                             style:
-                                AppTypography.getHeading3(isArabic: isArabic),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                                AppTypography.getBodyLarge(isArabic: isArabic)
+                                    .copyWith(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                              height: 1.25,
+                            ),
+                            maxLines: 2,
+                            softWrap: true,
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '${isArabic ? "المالك:" : "Owner:"} ${item.ownerName}',
-                      style: AppTypography.getCaption(isArabic: isArabic),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.person_outline_rounded,
+                          size: 13,
+                          color: AppColors.accentRoseText,
+                        ),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${isArabic ? "المالك: " : "Owner: "}${item.ownerName}',
+                            style: AppTypography.getCaption(isArabic: isArabic)
+                                .copyWith(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                              height: 1.2,
+                            ),
+                            maxLines: 2,
+                            softWrap: true,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     // Spot & Hook Pill (Wrapped for responsive safety)
                     Wrap(
                       spacing: 6,
@@ -198,43 +228,22 @@ class EmployeeCarCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
 
-          // Row 3: Status Progression Tactile Action Button
-          SizedBox(
-            width: double.infinity,
+          // Row 3: Status Progression Tactile Action Button with Jumping Dots
+          AppButton(
+            text: _getActionTitle(isArabic),
+            icon: isReady
+                ? Icons.check_circle_outline_rounded
+                : (isWashing
+                    ? Icons.local_car_wash_rounded
+                    : Icons.tune_rounded),
+            variant: isReady
+                ? AppButtonVariant.primary
+                : (isWashing
+                    ? AppButtonVariant.secondary
+                    : AppButtonVariant.primary),
             height: 44,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isReady
-                    ? AppColors.statusReady
-                    : (isWashing
-                        ? AppColors.statusWashing
-                        : AppColors.primaryCrimson),
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-                elevation: 0,
-              ),
-              onPressed: onActionTap,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    isReady
-                        ? Icons.check_circle_outline_rounded
-                        : (isWashing
-                            ? Icons.local_car_wash_rounded
-                            : Icons.tune_rounded),
-                    size: 18,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    _getActionTitle(isArabic),
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 13),
-                  ),
-                ],
-              ),
-            ),
+            isLoading: isLoading,
+            onPressed: onActionTap,
           ),
         ],
       ),

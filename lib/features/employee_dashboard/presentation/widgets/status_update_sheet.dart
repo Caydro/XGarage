@@ -27,6 +27,8 @@ class _StatusUpdateSheetState extends State<StatusUpdateSheet> {
   late TextEditingController _keyHookController;
   late TextEditingController _notesController;
   late String _currentStatus;
+  bool _isSavingStatus = false;
+  bool _isSavingSpot = false;
 
   @override
   void initState() {
@@ -111,22 +113,43 @@ class _StatusUpdateSheetState extends State<StatusUpdateSheet> {
             const SizedBox(height: 10),
             Align(
               alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () {
-                  widget.onUpdateSpot(
-                    _spotController.text.trim(),
-                    _keyHookController.text.trim().isEmpty ? null : _keyHookController.text.trim(),
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(widget.isArabic ? "تم تحديث الموقف" : "Spot updated"),
-                      backgroundColor: AppColors.statusReady,
-                    ),
-                  );
-                },
-                child: Text(
+              child: TextButton.icon(
+                icon: _isSavingSpot
+                    ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accentRoseText),
+                      )
+                    : const Icon(Icons.save_outlined, size: 16, color: AppColors.accentRoseText),
+                onPressed: _isSavingSpot
+                    ? null
+                    : () async {
+                        setState(() => _isSavingSpot = true);
+                        try {
+                          await widget.onUpdateSpot(
+                            _spotController.text.trim(),
+                            _keyHookController.text.trim().isEmpty
+                                ? null
+                                : _keyHookController.text.trim(),
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(widget.isArabic
+                                    ? "تم تحديث الموقف بنجاح"
+                                    : "Spot updated successfully"),
+                                backgroundColor: AppColors.statusReady,
+                              ),
+                            );
+                          }
+                        } finally {
+                          if (mounted) setState(() => _isSavingSpot = false);
+                        }
+                      },
+                label: Text(
                   widget.isArabic ? "حفظ الموقف والمفتاح" : "Save Spot & Key",
-                  style: const TextStyle(color: AppColors.accentRoseText, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                      color: AppColors.accentRoseText, fontWeight: FontWeight.w700),
                 ),
               ),
             ),
@@ -182,17 +205,30 @@ class _StatusUpdateSheetState extends State<StatusUpdateSheet> {
 
             AppButton(
               text: widget.isArabic ? "تطبيق الحالة الجديدة" : "Apply New Status",
-              onPressed: () {
+              icon: Icons.check_rounded,
+              isLoading: _isSavingStatus,
+              onPressed: () async {
+                setState(() => _isSavingStatus = true);
                 String? washStatus;
                 if (_currentStatus == 'washing') washStatus = 'in_progress';
                 if (_currentStatus == 'ready_at_gate') washStatus = 'completed';
 
-                widget.onUpdateStatus(
-                  _currentStatus,
-                  washStatus,
-                  _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
-                );
-                Navigator.of(context).pop();
+                try {
+                  await widget.onUpdateStatus(
+                    _currentStatus,
+                    washStatus,
+                    _notesController.text.trim().isEmpty
+                        ? null
+                        : _notesController.text.trim(),
+                  );
+                  if (context.mounted) {
+                    Navigator.of(context).pop();
+                  }
+                } finally {
+                  if (mounted) {
+                    setState(() => _isSavingStatus = false);
+                  }
+                }
               },
             ),
           ],

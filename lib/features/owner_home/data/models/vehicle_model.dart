@@ -20,6 +20,7 @@ class VehicleModel extends VehicleEntity {
     super.specialNotes,
     required super.currentStatus,
     required super.isInsideGarage,
+    super.ownerName,
     super.dailySchedule,
     super.activePickupRequest,
   });
@@ -42,6 +43,10 @@ class VehicleModel extends VehicleEntity {
       specialNotes: json['special_notes'] as String?,
       currentStatus: json['current_status'] as String? ?? 'parked',
       isInsideGarage: json['is_inside_garage'] as bool? ?? true,
+      ownerName: json['owner_name'] as String? ??
+          (json['owner'] is Map
+              ? (json['owner'] as Map)['name'] as String?
+              : null),
       dailySchedule: json['daily_schedule'] != null
           ? DailyScheduleModel.fromJson(json['daily_schedule'] as Map<String, dynamic>)
           : null,

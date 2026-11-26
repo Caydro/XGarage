@@ -8,6 +8,7 @@ import '../../domain/entities/vehicle_entity.dart';
 
 class VehicleHeroCard extends StatefulWidget {
   final VehicleEntity vehicle;
+  final String? ownerName;
   final bool isArabic;
   final Function(bool wantsWash, String washType, DateTime? scheduledFor, String? notes) onTakeCarOut;
   final Function(int requestId) onCancelRequest;
@@ -15,6 +16,7 @@ class VehicleHeroCard extends StatefulWidget {
   const VehicleHeroCard({
     super.key,
     required this.vehicle,
+    this.ownerName,
     required this.isArabic,
     required this.onTakeCarOut,
     required this.onCancelRequest,
@@ -28,6 +30,8 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
   bool _wantsWash = false;
   String _selectedWashType = 'exterior';
   bool _isScheduledDeparture = false;
+  bool _isSubmitting = false;
+  bool _isCanceling = false;
   TimeOfDay _selectedDepartureTime =
       TimeOfDay.fromDateTime(DateTime.now().add(const Duration(minutes: 30)));
   int _selectedPresetMinutes = 30;
@@ -131,12 +135,48 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
                       children: [
                         Text(
                           v.displayName,
-                          style: AppTypography.getHeading2(isArabic: widget.isArabic),
+                          style: AppTypography.getHeading3(
+                                  isArabic: widget.isArabic)
+                              .copyWith(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -0.2,
+                          ),
+                          maxLines: 2,
+                          softWrap: true,
                         ),
+                        const SizedBox(height: 2),
                         Text(
                           '${v.colorName} • ${v.isInsideGarage ? (widget.isArabic ? "داخل الجراج" : "Inside Garage") : (widget.isArabic ? "خارج الجراج" : "Outside")}',
-                          style: AppTypography.getCaption(isArabic: widget.isArabic),
+                          style: AppTypography.getCaption(
+                              isArabic: widget.isArabic),
                         ),
+                        if (v.ownerName != null ||
+                            widget.ownerName != null) ...[
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.person_outline_rounded,
+                                size: 13,
+                                color: AppColors.accentRoseText,
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  '${widget.isArabic ? "مالك السيارة: " : "Owner: "}${v.ownerName ?? widget.ownerName}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.accentRoseText,
+                                  ),
+                                  maxLines: 2,
+                                  softWrap: true,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ],
                     ),
                   ),
@@ -316,11 +356,29 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
                 ),
               ),
               if (!isReady)
-                IconButton(
-                  onPressed: () => widget.onCancelRequest(activeReq.id),
-                  icon: const Icon(Icons.close_rounded, color: AppColors.statusDanger, size: 20),
-                  tooltip: widget.isArabic ? "إلغاء الطلب" : "Cancel Request",
-                ),
+                _isCanceling
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.statusDanger,
+                        ),
+                      )
+                    : IconButton(
+                        onPressed: () async {
+                          setState(() => _isCanceling = true);
+                          try {
+                            await widget.onCancelRequest(activeReq.id);
+                          } finally {
+                            if (mounted) setState(() => _isCanceling = false);
+                          }
+                        },
+                        icon: const Icon(Icons.close_rounded,
+                            color: AppColors.statusDanger, size: 20),
+                        tooltip:
+                            widget.isArabic ? "إلغاء الطلب" : "Cancel Request",
+                      ),
             ],
           ),
         ],
@@ -586,7 +644,7 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
         ],
         const SizedBox(height: 16),
 
-        // Primary Tactile Button
+        // Primary Tactile Button with 3 Jumping Dots
         AppButton(
           text: _isScheduledDeparture
               ? (isAr
@@ -594,27 +652,33 @@ class _VehicleHeroCardState extends State<VehicleHeroCard> {
                   : "Schedule Ready at ${_formatTimeOfDay(_selectedDepartureTime, false)}")
               : (isAr ? "طلب إخراج السيارة الآن" : "Take Car Out Now"),
           icon: Icons.directions_car_rounded,
-          onPressed: () {
-            DateTime? targetDateTime;
-            if (_isScheduledDeparture) {
-              final now = DateTime.now();
-              targetDateTime = DateTime(
-                now.year,
-                now.month,
-                now.day,
-                _selectedDepartureTime.hour,
-                _selectedDepartureTime.minute,
-              );
-              if (targetDateTime.isBefore(now)) {
-                targetDateTime = targetDateTime.add(const Duration(days: 1));
+          isLoading: _isSubmitting,
+          onPressed: () async {
+            setState(() => _isSubmitting = true);
+            try {
+              DateTime? targetDateTime;
+              if (_isScheduledDeparture) {
+                final now = DateTime.now();
+                targetDateTime = DateTime(
+                  now.year,
+                  now.month,
+                  now.day,
+                  _selectedDepartureTime.hour,
+                  _selectedDepartureTime.minute,
+                );
+                if (targetDateTime.isBefore(now)) {
+                  targetDateTime = targetDateTime.add(const Duration(days: 1));
+                }
               }
+              await widget.onTakeCarOut(
+                _wantsWash,
+                _selectedWashType,
+                targetDateTime,
+                null,
+              );
+            } finally {
+              if (mounted) setState(() => _isSubmitting = false);
             }
-            widget.onTakeCarOut(
-              _wantsWash,
-              _selectedWashType,
-              targetDateTime,
-              null,
-            );
           },
         ),
       ],

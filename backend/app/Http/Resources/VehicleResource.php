@@ -28,6 +28,7 @@ class VehicleResource extends JsonResource
             'is_inside_garage' => (bool) $this->is_inside_garage,
             'daily_schedule' => new DailyScheduleResource($this->whenLoaded('dailySchedule')),
             'active_pickup_request' => new PickupRequestResource($this->whenLoaded('activePickupRequest')),
+            'owner_name' => $this->user?->name,
             'owner' => new UserResource($this->whenLoaded('user')),
         ];
     }

@@ -17,13 +17,15 @@ class OwnerCubit extends Cubit<OwnerState> {
       final data = await _repository.getDashboard();
       if (isClosed) return;
 
-      final vehicles = (data['vehicles'] as List<dynamic>?)?.cast<VehicleEntity>() ?? [];
+      final vehicles =
+          (data['vehicles'] as List<dynamic>?)?.cast<VehicleEntity>() ?? [];
       final primary = data['primary_vehicle'] as VehicleEntity?;
       final activeReq = primary?.activePickupRequest;
       final todaySched = data['today_schedule'] as Map<String, dynamic>?;
 
       emit(OwnerLoaded(
-        primaryVehicle: primary ?? (vehicles.isNotEmpty ? vehicles.first : null),
+        primaryVehicle:
+            primary ?? (vehicles.isNotEmpty ? vehicles.first : null),
         vehicles: vehicles,
         activeRequest: activeReq,
         isScheduleActiveToday: todaySched?['is_active_today'] as bool? ?? false,

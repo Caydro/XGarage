@@ -19,6 +19,7 @@ class VehicleEntity extends Equatable {
   final String? specialNotes;
   final String currentStatus; // parked, preparing, washing, ready_at_gate, checked_out
   final bool isInsideGarage;
+  final String? ownerName;
   final DailyScheduleEntity? dailySchedule;
   final PickupRequestEntity? activePickupRequest;
 
@@ -39,6 +40,7 @@ class VehicleEntity extends Equatable {
     this.specialNotes,
     required this.currentStatus,
     required this.isInsideGarage,
+    this.ownerName,
     this.dailySchedule,
     this.activePickupRequest,
   });
@@ -58,6 +60,7 @@ class VehicleEntity extends Equatable {
         plateNumbers,
         plateFullNormalized,
         plateImagePath,
+        ownerName,
         parkingSpot,
         keyHookNumber,
         specialNotes,
