@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:garage/features/auth/presentation/cubit/auth_cubit.dart';
+import 'package:garage/features/auth/presentation/cubit/auth_state.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -8,8 +10,6 @@ import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/widgets/notifications_sheet.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../settings/presentation/locale_cubit.dart';
-import '../../../auth/presentation/cubit/auth_cubit.dart';
-import '../../../auth/presentation/cubit/auth_state.dart';
 import '../cubit/owner_cubit.dart';
 import '../cubit/owner_state.dart';
 import '../widgets/add_vehicle_sheet.dart';

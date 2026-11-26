@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import 'app_button.dart';
+import 'jumping_dots_indicator.dart';
 
 class StateViews {
   static Widget loading({String? message}) {
@@ -9,16 +10,14 @@ class StateViews {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const SizedBox(
-            width: 36,
-            height: 36,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryCrimson),
-            ),
+          const JumpingDotsIndicator(
+            color: AppColors.primaryCrimson,
+            dotSize: 10,
+            jumpHeight: 9,
+            spacing: 7,
           ),
           if (message != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             Text(
               message,
               style: AppTypography.getBodyMedium(),

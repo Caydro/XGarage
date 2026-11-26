@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_logo.dart';
 import '../../../auth/presentation/cubit/auth_cubit.dart';
 import '../../../auth/presentation/cubit/auth_state.dart';
@@ -29,7 +30,7 @@ class _SplashPageState extends State<SplashPage>
 
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1400),
     );
 
     _fadeAnim = CurvedAnimation(
@@ -37,7 +38,7 @@ class _SplashPageState extends State<SplashPage>
       curve: Curves.easeIn,
     );
 
-    _scaleAnim = Tween<double>(begin: 0.92, end: 1.0).animate(
+    _scaleAnim = Tween<double>(begin: 0.94, end: 1.0).animate(
       CurvedAnimation(
         parent: _animController,
         curve: Curves.easeOutCubic,
@@ -49,9 +50,9 @@ class _SplashPageState extends State<SplashPage>
     // Trigger auth status check in background
     context.read<AuthCubit>().checkAuthStatus();
 
-    // Allow splash animation to play smoothly for 2.4s before routing
+    // Allow the 30-frame fiery tachometer GIF to complete its full loop (3.2s) before routing
     _navTimer =
-        Timer(const Duration(milliseconds: 2400), _navigateToNextScreen);
+        Timer(const Duration(milliseconds: 3200), _navigateToNextScreen);
   }
 
   void _navigateToNextScreen() {
@@ -79,25 +80,27 @@ class _SplashPageState extends State<SplashPage>
 
   @override
   Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+
     return Scaffold(
       backgroundColor: const Color(0xFF07060A),
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // Ambient Radial Crimson Core Glow
+          // Ambient Radial Crimson Core Glow behind the tachometer
           Positioned(
-            top: MediaQuery.of(context).size.height * 0.12,
+            top: size.height * 0.22,
             left: 0,
             right: 0,
-            height: 420,
+            height: 380,
             child: Container(
               decoration: const BoxDecoration(
                 gradient: RadialGradient(
                   center: Alignment(0, -0.1),
-                  radius: 0.8,
+                  radius: 0.75,
                   colors: [
-                    Color(0x40E11D48),
-                    Color(0x14E11D48),
+                    Color(0x55E11D48),
+                    Color(0x18E11D48),
                     Colors.transparent,
                   ],
                 ),
@@ -112,24 +115,40 @@ class _SplashPageState extends State<SplashPage>
                 scale: _scaleAnim,
                 child: Column(
                   children: [
-                    const Spacer(flex: 2),
+                    const Spacer(flex: 3),
 
-                    // Central High-Performance Tachometer Artwork
+                    // Central High-Performance Animated Tachometer GIF
+                    // Seamlessly blended with vertical edge vignetting so it fits the screen edge-to-edge
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 24),
-                      child: Center(
-                        child: ConstrainedBox(
-                          constraints: const BoxConstraints(
-                            maxHeight: 460,
-                            maxWidth: 380,
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(28),
-                            child: Image.asset(
-                              'assets/images/splash_bg.jpg',
-                              fit: BoxFit.contain,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Column(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: ShaderMask(
+                          shaderCallback: (bounds) {
+                            return const LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black,
+                                Colors.black,
+                                Colors.transparent,
+                              ],
+                              stops: [0.0, 0.06, 0.94, 1.0],
+                            ).createShader(bounds);
+                          },
+                          blendMode: BlendMode.dstIn,
+                          child: Image.asset(
+                            'assets/images/splash_anim.gif',
+                            width: double.infinity,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) {
+                              // Graceful fallback to static artwork or emblem if GIF fails
+                              return Image.asset(
+                                'assets/images/splash_bg.jpg',
+                                width: double.infinity,
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: const [
                                     GlowingParkingEmblem(size: 130),
@@ -140,9 +159,9 @@ class _SplashPageState extends State<SplashPage>
                                       isItalic: true,
                                     ),
                                   ],
-                                );
-                              },
-                            ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ),
@@ -151,8 +170,18 @@ class _SplashPageState extends State<SplashPage>
                     const Spacer(flex: 3),
 
                     // Bottom: Neon Crimson Glowing Rotating Spinner
-                    const GlowingCrimsonSpinner(size: 46),
-                    const SizedBox(height: 28),
+                    const GlowingCrimsonSpinner(size: 44),
+                    const SizedBox(height: 16),
+
+                    // Telemetry Initialization Status
+                    Text(
+                      "INITIALIZING SECURE VALET OS",
+                      style: AppTypography.getTelemetry(
+                        fontSize: 10,
+                        color: Colors.white38,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
 
                     const Spacer(flex: 1),
                   ],

@@ -31,7 +31,8 @@ class AuthCubit extends Cubit<AuthState> {
   Future<void> login({required String login, required String password}) async {
     emit(AuthLoading());
     try {
-      final user = await _authRepository.login(login: login, password: password);
+      final user =
+          await _authRepository.login(login: login, password: password);
       if (isClosed) return;
       emit(Authenticated(user));
       _syncFcmToken();
@@ -98,7 +99,8 @@ class AuthCubit extends Cubit<AuthState> {
 
   void _syncFcmToken() {
     try {
-      if (sl.isRegistered<NotificationService>() && sl.isRegistered<ApiClient>()) {
+      if (sl.isRegistered<NotificationService>() &&
+          sl.isRegistered<ApiClient>()) {
         sl<NotificationService>().syncTokenWithBackend(sl<ApiClient>());
       }
     } catch (_) {}
