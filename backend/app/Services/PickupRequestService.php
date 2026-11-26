@@ -48,6 +48,8 @@ class PickupRequestService
                 'is_inside_garage' => true,
             ]);
 
+            app(NotificationService::class)->notifyStaffNewPickup($vehicle, $scheduledFor->format('H:i'), $wantsWash);
+
             return $request->load('vehicle');
         });
     }

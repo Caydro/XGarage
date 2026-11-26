@@ -196,7 +196,10 @@ class EmployeeQueueService
                 'created_at' => Carbon::now(),
             ]);
 
-            return $vehicle->fresh(['dailySchedule', 'activePickupRequest', 'user']);
+            $freshVehicle = $vehicle->fresh(['dailySchedule', 'activePickupRequest', 'user']);
+            app(NotificationService::class)->notifyOwnerStatusChange($freshVehicle, $newStatus, $washStatus);
+
+            return $freshVehicle;
         });
     }
 
@@ -207,7 +210,10 @@ class EmployeeQueueService
             'key_hook_number' => $keyHook,
         ]);
 
-        return $vehicle->fresh(['dailySchedule', 'activePickupRequest', 'user']);
+        $freshVehicle = $vehicle->fresh(['dailySchedule', 'activePickupRequest', 'user']);
+        app(NotificationService::class)->notifyOwnerSpotUpdated($freshVehicle, $spot, $keyHook);
+
+        return $freshVehicle;
     }
 
     public function searchVehicles(?string $search): Collection

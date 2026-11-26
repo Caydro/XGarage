@@ -109,7 +109,8 @@ class _SettingsPageState extends State<SettingsPage> {
                           color: AppColors.accentRoseSoft,
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.person_rounded, size: 30, color: AppColors.accentRoseText),
+                        child: const Icon(Icons.person_rounded,
+                            size: 30, color: AppColors.accentRoseText),
                       ),
                       const SizedBox(width: 14),
                       Expanded(
@@ -118,22 +119,32 @@ class _SettingsPageState extends State<SettingsPage> {
                           children: [
                             Text(
                               user.name,
-                              style: AppTypography.getHeading3(isArabic: isArabic),
+                              style:
+                                  AppTypography.getHeading3(isArabic: isArabic),
                             ),
                             Text(
                               user.phone,
-                              style: AppTypography.getCaption(isArabic: isArabic),
+                              style:
+                                  AppTypography.getCaption(isArabic: isArabic),
                             ),
                             const SizedBox(height: 4),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
                               decoration: BoxDecoration(
                                 color: AppColors.surfaceInput,
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(
-                                user.isEmployee ? (isArabic ? "فريق عمل الجراج" : "Valet Staff") : (isArabic ? "مالك سيارة" : "Car Owner"),
-                                style: const TextStyle(fontSize: 10, color: AppColors.primaryCrimson, fontWeight: FontWeight.w700),
+                                user.isEmployee
+                                    ? (isArabic
+                                        ? "فريق عمل الجراج"
+                                        : "Valet Staff")
+                                    : (isArabic ? "مالك سيارة" : "Car Owner"),
+                                style: const TextStyle(
+                                    fontSize: 10,
+                                    color: AppColors.primaryCrimson,
+                                    fontWeight: FontWeight.w700),
                               ),
                             ),
                           ],
@@ -152,7 +163,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.language_rounded, color: AppColors.accentRoseText),
+                        const Icon(Icons.language_rounded,
+                            color: AppColors.accentRoseText),
                         const SizedBox(width: 12),
                         Text(
                           isArabic ? "لغة التطبيق" : "App Language",
@@ -165,8 +177,10 @@ class _SettingsPageState extends State<SettingsPage> {
                       dropdownColor: AppColors.bgElevated,
                       underline: const SizedBox.shrink(),
                       items: const [
-                        DropdownMenuItem(value: 'ar', child: Text('العربية (RTL)')),
-                        DropdownMenuItem(value: 'en', child: Text('English (LTR)')),
+                        DropdownMenuItem(
+                            value: 'ar', child: Text('العربية (RTL)')),
+                        DropdownMenuItem(
+                            value: 'en', child: Text('English (LTR)')),
                       ],
                       onChanged: (val) {
                         if (val != null) {
@@ -189,23 +203,32 @@ class _SettingsPageState extends State<SettingsPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          isArabic ? "خادم الجراج المتصل" : "Connected Garage Server",
+                          isArabic
+                              ? "خادم الجراج المتصل"
+                              : "Connected Garage Server",
                           style: AppTypography.getCaption(isArabic: isArabic),
                         ),
                         if (_pingSuccess != null)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 2),
                             decoration: BoxDecoration(
-                              color: _pingSuccess! ? AppColors.statusReadyBg : AppColors.statusDangerBg,
+                              color: _pingSuccess!
+                                  ? AppColors.statusReadyBg
+                                  : AppColors.statusDangerBg,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Icon(
-                                  _pingSuccess! ? Icons.check_circle_rounded : Icons.error_outline_rounded,
+                                  _pingSuccess!
+                                      ? Icons.check_circle_rounded
+                                      : Icons.error_outline_rounded,
                                   size: 12,
-                                  color: _pingSuccess! ? AppColors.statusReady : AppColors.statusDanger,
+                                  color: _pingSuccess!
+                                      ? AppColors.statusReady
+                                      : AppColors.statusDanger,
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -213,7 +236,9 @@ class _SettingsPageState extends State<SettingsPage> {
                                   style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.bold,
-                                    color: _pingSuccess! ? AppColors.statusReady : AppColors.statusDanger,
+                                    color: _pingSuccess!
+                                        ? AppColors.statusReady
+                                        : AppColors.statusDanger,
                                   ),
                                 ),
                               ],
@@ -223,14 +248,18 @@ class _SettingsPageState extends State<SettingsPage> {
                     ),
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: AppColors.surfaceInput,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
                         _currentUrl,
-                        style: const TextStyle(fontSize: 12, color: Colors.white, fontFamily: 'monospace'),
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white,
+                            fontFamily: 'monospace'),
                       ),
                     ),
                     if (_pingResult != null) ...[
@@ -239,7 +268,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         _pingResult!,
                         style: TextStyle(
                           fontSize: 11,
-                          color: _pingSuccess == true ? AppColors.statusReady : AppColors.statusDanger,
+                          color: _pingSuccess == true
+                              ? AppColors.statusReady
+                              : AppColors.statusDanger,
                         ),
                       ),
                     ],
@@ -247,8 +278,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
                     // Quick URL Presets
                     Text(
-                      isArabic ? "التبديل السريع للخادم:" : "Quick Server Switch:",
-                      style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                      isArabic
+                          ? "التبديل السريع للخادم:"
+                          : "Quick Server Switch:",
+                      style: const TextStyle(
+                          fontSize: 11, color: AppColors.textMuted),
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -266,13 +300,18 @@ class _SettingsPageState extends State<SettingsPage> {
                         }
 
                         return ChoiceChip(
-                          label: Text(label, style: const TextStyle(fontSize: 11)),
+                          label:
+                              Text(label, style: const TextStyle(fontSize: 11)),
                           selected: isSelected,
                           selectedColor: AppColors.primaryCrimson,
                           backgroundColor: AppColors.surfaceInput,
                           labelStyle: TextStyle(
-                            color: isSelected ? Colors.white : AppColors.textSecondary,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            color: isSelected
+                                ? Colors.white
+                                : AppColors.textSecondary,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
                           ),
                           onSelected: (_) => _selectUrl(url),
                         );
@@ -289,12 +328,18 @@ class _SettingsPageState extends State<SettingsPage> {
                             ? const SizedBox(
                                 width: 14,
                                 height: 14,
-                                child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryCrimson),
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primaryCrimson),
                               )
-                            : const Icon(Icons.network_ping_rounded, size: 16, color: AppColors.accentRoseText),
+                            : const Icon(Icons.network_ping_rounded,
+                                size: 16, color: AppColors.accentRoseText),
                         label: Text(
-                          isArabic ? "اختبار الاتصال بالخادم" : "Test Connection",
-                          style: const TextStyle(fontSize: 12, color: AppColors.accentRoseText),
+                          isArabic
+                              ? "اختبار الاتصال بالخادم"
+                              : "Test Connection",
+                          style: const TextStyle(
+                              fontSize: 12, color: AppColors.accentRoseText),
                         ),
                       ),
                     ),

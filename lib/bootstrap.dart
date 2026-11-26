@@ -4,6 +4,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/di/injection.dart';
 import 'core/router/bloc_observer.dart';
+import 'core/services/notification_service.dart';
 
 Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
   FlutterError.onError = (details) {
@@ -16,6 +17,7 @@ Future<void> bootstrap(FutureOr<Widget> Function() builder) async {
     () async {
       WidgetsFlutterBinding.ensureInitialized();
       await initDependencies();
+      await sl<NotificationService>().init();
       runApp(await builder());
     },
     (error, stackTrace) => developer.log(error.toString(), stackTrace: stackTrace, name: 'UNCAUGHT_ERROR'),

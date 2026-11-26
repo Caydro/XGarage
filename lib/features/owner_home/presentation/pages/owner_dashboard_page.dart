@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/glass_container.dart';
 import '../../../../core/widgets/app_logo.dart';
+import '../../../../core/widgets/notifications_sheet.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../settings/presentation/locale_cubit.dart';
 import '../cubit/owner_cubit.dart';
@@ -228,6 +229,11 @@ class _OwnerDashboardPageState extends State<OwnerDashboardPage> {
                 ),
               ),
               onPressed: () => context.read<LocaleCubit>().toggleLocale(),
+            ),
+            // Notifications Center
+            IconButton(
+              icon: const Icon(Icons.notifications_none_rounded, color: AppColors.textSecondary),
+              onPressed: () => NotificationsSheet.show(context, isArabic: isArabic),
             ),
             // Settings / Logout
             IconButton(

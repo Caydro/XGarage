@@ -17,7 +17,8 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateMixin {
+class _SplashPageState extends State<SplashPage>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _animController;
   late final Animation<double> _fadeAnim;
   late final Animation<double> _scaleAnim;
@@ -50,7 +51,8 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
     context.read<AuthCubit>().checkAuthStatus();
 
     // Allow splash animation to play smoothly for 2.4s before routing
-    _navTimer = Timer(const Duration(milliseconds: 2400), _navigateToNextScreen);
+    _navTimer =
+        Timer(const Duration(milliseconds: 2400), _navigateToNextScreen);
   }
 
   void _navigateToNextScreen() {
@@ -153,12 +155,14 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                               // Elegant fallback if asset file is not ready
                               return Container(
                                 height: 160,
-                                margin: const EdgeInsets.symmetric(horizontal: 24),
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 24),
                                 decoration: BoxDecoration(
                                   color: AppColors.surfaceCard,
                                   borderRadius: BorderRadius.circular(20),
                                   border: Border.all(
-                                    color: AppColors.primaryCrimson.withValues(alpha: 0.3),
+                                    color: AppColors.primaryCrimson
+                                        .withValues(alpha: 0.3),
                                   ),
                                 ),
                                 child: const Center(

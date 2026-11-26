@@ -7,6 +7,7 @@ import 'bootstrap.dart';
 import 'core/di/injection.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/notification_listener_wrapper.dart';
 import 'features/auth/presentation/cubit/auth_cubit.dart';
 import 'features/employee_dashboard/presentation/cubit/employee_cubit.dart';
 import 'features/owner_home/presentation/cubit/owner_cubit.dart';
@@ -66,6 +67,11 @@ class _XGarageAppState extends State<XGarageApp> {
               GlobalCupertinoLocalizations.delegate,
             ],
             routerConfig: _router,
+            builder: (context, child) {
+              return NotificationListenerWrapper(
+                child: child ?? const SizedBox.shrink(),
+              );
+            },
           );
         },
       ),

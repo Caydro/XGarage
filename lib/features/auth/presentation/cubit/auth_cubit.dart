@@ -1,4 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/di/injection.dart';
+import '../../../../core/network/api_client.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'auth_state.dart';
 
@@ -14,6 +17,7 @@ class AuthCubit extends Cubit<AuthState> {
       if (isClosed) return;
       if (user != null) {
         emit(Authenticated(user));
+        _syncFcmToken();
       } else {
         emit(Unauthenticated());
       }
@@ -29,6 +33,7 @@ class AuthCubit extends Cubit<AuthState> {
       final user = await _authRepository.login(login: login, password: password);
       if (isClosed) return;
       emit(Authenticated(user));
+      _syncFcmToken();
     } catch (e) {
       if (isClosed) return;
       emit(AuthError(e.toString()));
@@ -65,10 +70,19 @@ class AuthCubit extends Cubit<AuthState> {
       );
       if (isClosed) return;
       emit(Authenticated(user));
+      _syncFcmToken();
     } catch (e) {
       if (isClosed) return;
       emit(AuthError(e.toString()));
     }
+  }
+
+  void _syncFcmToken() {
+    try {
+      if (sl.isRegistered<NotificationService>() && sl.isRegistered<ApiClient>()) {
+        sl<NotificationService>().syncTokenWithBackend(sl<ApiClient>());
+      }
+    } catch (_) {}
   }
 
   Future<void> logout() async {

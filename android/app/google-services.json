@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "182577083753",
+    "project_id": "xgarage-22af0",
+    "storage_bucket": "xgarage-22af0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:182577083753:android:d0c805f4895122fa2779f8",
+        "android_client_info": {
+          "package_name": "com.caydro.xgarage"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBE0aDEXb963QeZPedYjMypUBxIGJuJ5js"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

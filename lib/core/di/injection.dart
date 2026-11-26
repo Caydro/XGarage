@@ -17,6 +17,7 @@ import '../../features/owner_home/presentation/cubit/owner_cubit.dart';
 import '../../features/settings/presentation/locale_cubit.dart';
 import '../config/app_config.dart';
 import '../network/api_client.dart';
+import '../services/notification_service.dart';
 import '../storage/token_storage.dart';
 
 final sl = GetIt.instance;
@@ -34,6 +35,10 @@ Future<void> initDependencies() async {
 
   sl.registerLazySingleton<ApiClient>(
     () => ApiClient(tokenStorage: sl()),
+  );
+
+  sl.registerSingleton<NotificationService>(
+    NotificationService(),
   );
 
   // Auth Feature

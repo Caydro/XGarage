@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_logo.dart';
+import '../../../../core/widgets/notifications_sheet.dart';
 import '../../../../core/widgets/state_views.dart';
 import '../../../settings/presentation/locale_cubit.dart';
 import '../cubit/employee_cubit.dart';
@@ -231,6 +232,12 @@ class _EmployeeQueuePageState extends State<EmployeeQueuePage> {
                 ),
               ),
               onPressed: () => context.read<LocaleCubit>().toggleLocale(),
+            ),
+            IconButton(
+              icon: const Icon(Icons.notifications_none_rounded,
+                  color: AppColors.textSecondary),
+              onPressed: () =>
+                  NotificationsSheet.show(context, isArabic: isArabic),
             ),
             IconButton(
               icon: const Icon(Icons.settings_outlined,

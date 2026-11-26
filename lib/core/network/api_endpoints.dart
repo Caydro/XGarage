@@ -4,6 +4,7 @@ class ApiEndpoints {
   static const String login = '/auth/login';
   static const String me = '/auth/me';
   static const String logout = '/auth/logout';
+  static const String updateFcmToken = '/auth/fcm-token';
 
   // Owner
   static const String ownerDashboard = '/owner/dashboard';

@@ -67,4 +67,20 @@ class AuthController extends Controller
             message: 'Logged out successfully.'
         );
     }
+
+    public function updateFcmToken(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'fcm_token' => ['required', 'string', 'max:500'],
+        ]);
+
+        $request->user()->update([
+            'fcm_token' => $validated['fcm_token'],
+        ]);
+
+        return $this->successResponse(
+            data: ['fcm_token' => $validated['fcm_token']],
+            message: 'FCM device token updated successfully.'
+        );
+    }
 }
