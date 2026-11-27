@@ -20,7 +20,14 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final (user, token) = await _remoteDataSource.login(login: login, password: password);
       await _tokenStorage.saveToken(token);
-      await _tokenStorage.saveUserMeta(id: user.id, name: user.name, role: user.role);
+      await _tokenStorage.saveUserMeta(
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        phone: user.phone,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+      );
       return user;
     } on ServerException catch (e) {
       throw ServerFailure(e.message, e.statusCode);
@@ -60,7 +67,14 @@ class AuthRepositoryImpl implements AuthRepository {
 
       final (user, token) = await _remoteDataSource.register(payload);
       await _tokenStorage.saveToken(token);
-      await _tokenStorage.saveUserMeta(id: user.id, name: user.name, role: user.role);
+      await _tokenStorage.saveUserMeta(
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        phone: user.phone,
+        email: user.email,
+        avatarUrl: user.avatarUrl,
+      );
       return user;
     } on ServerException catch (e) {
       throw ServerFailure(e.message, e.statusCode);
@@ -74,9 +88,30 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final token = await _tokenStorage.getToken();
       if (token == null) return null;
-      return await _remoteDataSource.getMe();
+
+      final cachedUser = _tokenStorage.getCachedUser();
+
+      try {
+        final freshUser = await _remoteDataSource
+            .getMe()
+            .timeout(const Duration(seconds: 4));
+        await _tokenStorage.saveUserMeta(
+          id: freshUser.id,
+          name: freshUser.name,
+          role: freshUser.role,
+          phone: freshUser.phone,
+          email: freshUser.email,
+          avatarUrl: freshUser.avatarUrl,
+        );
+        return freshUser;
+      } catch (_) {
+        if (cachedUser != null) {
+          return cachedUser;
+        }
+        return null;
+      }
     } catch (_) {
-      return null;
+      return _tokenStorage.getCachedUser();
     }
   }
 
@@ -100,6 +135,9 @@ class AuthRepositoryImpl implements AuthRepository {
         id: updatedUser.id,
         name: updatedUser.name,
         role: updatedUser.role,
+        phone: updatedUser.phone,
+        email: updatedUser.email,
+        avatarUrl: updatedUser.avatarUrl,
       );
       return updatedUser;
     } on ServerException catch (e) {
@@ -117,6 +155,9 @@ class AuthRepositoryImpl implements AuthRepository {
         id: updatedUser.id,
         name: updatedUser.name,
         role: updatedUser.role,
+        phone: updatedUser.phone,
+        email: updatedUser.email,
+        avatarUrl: updatedUser.avatarUrl,
       );
       return updatedUser;
     } on ServerException catch (e) {

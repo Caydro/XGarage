@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/di/injection.dart';
 import '../../../../core/network/api_client.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/storage/token_storage.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import 'auth_state.dart';
@@ -12,7 +13,23 @@ class AuthCubit extends Cubit<AuthState> {
   AuthCubit(this._authRepository) : super(AuthInitial());
 
   Future<void> checkAuthStatus() async {
-    emit(AuthLoading());
+    try {
+      if (sl.isRegistered<TokenStorage>()) {
+        final tokenStorage = sl<TokenStorage>();
+        final token = await tokenStorage.getToken();
+        final cached = tokenStorage.getCachedUser();
+        if (token != null && cached != null) {
+          emit(Authenticated(cached));
+        } else {
+          emit(AuthLoading());
+        }
+      } else {
+        emit(AuthLoading());
+      }
+    } catch (_) {
+      emit(AuthLoading());
+    }
+
     try {
       final user = await _authRepository.getCurrentUser();
       if (isClosed) return;
@@ -24,7 +41,9 @@ class AuthCubit extends Cubit<AuthState> {
       }
     } catch (_) {
       if (isClosed) return;
-      emit(Unauthenticated());
+      if (state is! Authenticated) {
+        emit(Unauthenticated());
+      }
     }
   }
 

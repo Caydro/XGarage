@@ -23,6 +23,9 @@ class _SplashPageState extends State<SplashPage>
   late final Animation<double> _fadeAnim;
   late final Animation<double> _scaleAnim;
   Timer? _navTimer;
+  Timer? _maxSafetyTimer;
+  bool _isMinDurationElapsed = false;
+  bool _hasNavigated = false;
 
   @override
   void initState() {
@@ -30,7 +33,7 @@ class _SplashPageState extends State<SplashPage>
 
     _animController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(milliseconds: 1200),
     );
 
     _fadeAnim = CurvedAnimation(
@@ -47,18 +50,41 @@ class _SplashPageState extends State<SplashPage>
 
     _animController.forward();
 
-    // Trigger auth status check in background
+    // Check auth status
     context.read<AuthCubit>().checkAuthStatus();
 
-    // Allow the 30-frame fiery tachometer GIF to complete its full loop (3.2s) before routing
-    _navTimer =
-        Timer(const Duration(milliseconds: 3200), _navigateToNextScreen);
+    // Display the tachometer loop smoothly (2.4s) before routing
+    _navTimer = Timer(const Duration(milliseconds: 2400), () {
+      _isMinDurationElapsed = true;
+      _attemptNavigation();
+    });
+
+    // Max safety timer: never stay on splash for more than 4 seconds under any circumstances
+    _maxSafetyTimer = Timer(const Duration(milliseconds: 4000), () {
+      if (!_hasNavigated) {
+        _isMinDurationElapsed = true;
+        _navigateToLoginOrHome(context.read<AuthCubit>().state);
+      }
+    });
   }
 
-  void _navigateToNextScreen() {
-    if (!mounted) return;
+  void _attemptNavigation() {
+    if (!mounted || _hasNavigated || !_isMinDurationElapsed) return;
 
     final authState = context.read<AuthCubit>().state;
+    if (authState is AuthLoading) {
+      // Still waiting for auth check; will navigate as soon as AuthCubit emits or safety timer expires
+      return;
+    }
+
+    _navigateToLoginOrHome(authState);
+  }
+
+  void _navigateToLoginOrHome(AuthState authState) {
+    if (!mounted || _hasNavigated) return;
+    _hasNavigated = true;
+    _navTimer?.cancel();
+    _maxSafetyTimer?.cancel();
 
     if (authState is Authenticated) {
       if (authState.user.isEmployee) {
@@ -74,6 +100,7 @@ class _SplashPageState extends State<SplashPage>
   @override
   void dispose() {
     _navTimer?.cancel();
+    _maxSafetyTimer?.cancel();
     _animController.dispose();
     super.dispose();
   }
@@ -82,66 +109,57 @@ class _SplashPageState extends State<SplashPage>
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF07060A),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // Ambient Radial Crimson Core Glow behind the tachometer
-          Positioned(
-            top: size.height * 0.22,
-            left: 0,
-            right: 0,
-            height: 380,
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: RadialGradient(
-                  center: Alignment(0, -0.1),
-                  radius: 0.75,
-                  colors: [
-                    Color(0x55E11D48),
-                    Color(0x18E11D48),
-                    Colors.transparent,
-                  ],
+    return BlocListener<AuthCubit, AuthState>(
+      listener: (context, state) {
+        if (_isMinDurationElapsed && state is! AuthLoading) {
+          _navigateToLoginOrHome(state);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFF07060A),
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Ambient Radial Crimson Core Glow behind the tachometer
+            Positioned(
+              top: size.height * 0.22,
+              left: 0,
+              right: 0,
+              height: 380,
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: RadialGradient(
+                    center: Alignment(0, -0.1),
+                    radius: 0.75,
+                    colors: [
+                      Color(0x55E11D48),
+                      Color(0x18E11D48),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
 
-          SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnim,
-              child: ScaleTransition(
-                scale: _scaleAnim,
-                child: Column(
-                  children: [
-                    const Spacer(flex: 3),
+            SafeArea(
+              child: FadeTransition(
+                opacity: _fadeAnim,
+                child: ScaleTransition(
+                  scale: _scaleAnim,
+                  child: Column(
+                    children: [
+                      const Spacer(flex: 3),
 
-                    // Central High-Performance Animated Tachometer GIF
-                    // Seamlessly blended with vertical edge vignetting so it fits the screen edge-to-edge
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: ShaderMask(
-                          shaderCallback: (bounds) {
-                            return const LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black,
-                                Colors.black,
-                                Colors.transparent,
-                              ],
-                              stops: [0.0, 0.06, 0.94, 1.0],
-                            ).createShader(bounds);
-                          },
-                          blendMode: BlendMode.dstIn,
+                      // Central High-Performance Animated Tachometer GIF
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
                           child: Image.asset(
                             'assets/images/splash_anim.gif',
                             width: double.infinity,
                             fit: BoxFit.contain,
+                            gaplessPlayback: true,
                             errorBuilder: (context, error, stackTrace) {
                               // Graceful fallback to static artwork or emblem if GIF fails
                               return Image.asset(
@@ -165,9 +183,8 @@ class _SplashPageState extends State<SplashPage>
                           ),
                         ),
                       ),
-                    ),
 
-                    const Spacer(flex: 3),
+                      const Spacer(flex: 3),
 
                     // Bottom: Neon Crimson Glowing Rotating Spinner
                     const GlowingCrimsonSpinner(size: 44),
@@ -191,6 +208,7 @@ class _SplashPageState extends State<SplashPage>
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }

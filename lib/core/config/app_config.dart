@@ -45,6 +45,6 @@ class AppConfig {
     _activeBaseUrl = url;
   }
 
-  static const int connectTimeoutSeconds = 10;
-  static const int receiveTimeoutSeconds = 12;
+  static const int connectTimeoutSeconds = 4;
+  static const int receiveTimeoutSeconds = 5;
 }

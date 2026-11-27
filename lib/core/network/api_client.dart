@@ -151,8 +151,8 @@ class ApiClient {
       try {
         final probeDio = Dio(
           BaseOptions(
-            connectTimeout: const Duration(seconds: 2),
-            receiveTimeout: const Duration(seconds: 2),
+            connectTimeout: const Duration(seconds: 1),
+            receiveTimeout: const Duration(seconds: 1),
           ),
         );
         final res = await probeDio.get(

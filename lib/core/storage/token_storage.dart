@@ -1,11 +1,15 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../features/auth/domain/entities/user_entity.dart';
 
 class TokenStorage {
   static const String _keyToken = 'auth_token';
   static const String _keyRole = 'user_role';
   static const String _keyUserId = 'user_id';
   static const String _keyUserName = 'user_name';
+  static const String _keyUserPhone = 'user_phone';
+  static const String _keyUserEmail = 'user_email';
+  static const String _keyUserAvatar = 'user_avatar';
   static const String _keyLocale = 'app_locale';
   static const String _keyBaseUrl = 'custom_base_url';
 
@@ -30,10 +34,43 @@ class TokenStorage {
     required int id,
     required String name,
     required String role,
+    String? phone,
+    String? email,
+    String? avatarUrl,
   }) async {
     await _prefs.setInt(_keyUserId, id);
     await _prefs.setString(_keyUserName, name);
     await _prefs.setString(_keyRole, role);
+    if (phone != null && phone.isNotEmpty) {
+      await _prefs.setString(_keyUserPhone, phone);
+    }
+    if (email != null && email.isNotEmpty) {
+      await _prefs.setString(_keyUserEmail, email);
+    } else if (email == null) {
+      await _prefs.remove(_keyUserEmail);
+    }
+    if (avatarUrl != null && avatarUrl.isNotEmpty) {
+      await _prefs.setString(_keyUserAvatar, avatarUrl);
+    } else if (avatarUrl == null) {
+      await _prefs.remove(_keyUserAvatar);
+    }
+  }
+
+  UserEntity? getCachedUser() {
+    final id = _prefs.getInt(_keyUserId);
+    final name = _prefs.getString(_keyUserName);
+    final role = _prefs.getString(_keyRole);
+    if (id == null || name == null || role == null) return null;
+
+    return UserEntity(
+      id: id,
+      name: name,
+      phone: _prefs.getString(_keyUserPhone) ?? '',
+      email: _prefs.getString(_keyUserEmail),
+      role: role,
+      avatarUrl: _prefs.getString(_keyUserAvatar),
+      locale: getLocale(),
+    );
   }
 
   String? getRole() {
@@ -69,5 +106,8 @@ class TokenStorage {
     await _prefs.remove(_keyRole);
     await _prefs.remove(_keyUserId);
     await _prefs.remove(_keyUserName);
+    await _prefs.remove(_keyUserPhone);
+    await _prefs.remove(_keyUserEmail);
+    await _prefs.remove(_keyUserAvatar);
   }
 }

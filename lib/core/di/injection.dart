@@ -26,7 +26,11 @@ Future<void> initDependencies() async {
   // External
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerSingleton<SharedPreferences>(sharedPreferences);
-  sl.registerLazySingleton<FlutterSecureStorage>(() => const FlutterSecureStorage());
+  sl.registerLazySingleton<FlutterSecureStorage>(
+    () => const FlutterSecureStorage(
+      aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    ),
+  );
 
   // Core Storage & Network
   final tokenStorage = TokenStorage(secureStorage: sl(), prefs: sl());
